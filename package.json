@@ -1,0 +1,12 @@
+{
+  "name": "franchise_magn_system",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend/FMSbackend && python manage.py runserver",
+    "frontend": "cd frontend/shorat-connect && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
