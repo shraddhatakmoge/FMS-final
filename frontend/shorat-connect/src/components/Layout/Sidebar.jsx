@@ -9,25 +9,20 @@ import {
   TrendingUp,
   FileText,
   Bell,
-  Award,
-  Target,
-  Upload,
-  MessageSquare,
   Star,
-  Gift,
-  Briefcase,
-  ChevronRight,
+  Target,
+  MessageSquare,
   Home
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false }) => {
+export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false, unreadCount = 0 }) => {
   const getMenuItems = () => {
     const commonItems = [
       { icon: Home, label: "Dashboard" },
-      { icon: Bell, label: "Notifications", badge: "3" },
+      { icon: Bell, label: "Notifications", badge: unreadCount > 0 ? unreadCount.toString() : null },
     ];
 
     const adminItems = [
@@ -81,16 +76,15 @@ export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false }
 
   const MenuItem = ({ item }) => (
     <Button
-  variant={activeItem === item.label ? "default" : "ghost"}
-  className={cn(
-    "w-full justify-start mb-1 relative group hover:text-red-600", // added here
-    collapsed ? "px-2" : "px-3",
-    activeItem === item.label &&
-      "bg-primary bg-[#f0000b] hover:bg-[#fd3535] text-primary-foreground shadow-medium"
-  )}
-  onClick={() => onItemClick(item.label)}
->
-
+      variant={activeItem === item.label ? "default" : "ghost"}
+      className={cn(
+        "w-full justify-start mb-1 relative group hover:text-red-600",
+        collapsed ? "px-2" : "px-3",
+        activeItem === item.label &&
+          "bg-primary bg-[#f0000b] hover:bg-[#fd3535] text-primary-foreground shadow-medium"
+      )}
+      onClick={() => onItemClick(item.label)}
+    >
       <item.icon className={cn("h-4 w-4", collapsed ? "" : "mr-3")} />
       {!collapsed && (
         <>

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { NotificationPage } from "@/components/Notifications/NotificationPage";
 import { LoginForm } from "@/components/auth/LoginForm";
-import  {Header}  from "@/components/Layout/Header";
+import { Header } from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { FranchiseManagement } from "@/components/Franchise/FranchiseManagement";
@@ -14,8 +15,23 @@ const Index = () => {
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const [notifications, setNotifications] = useState([
+    { id: 1, franchiseId: 1, message: "New staff member added to Pune Wagholi", time: "Just now", read: false },
+    { id: 2, franchiseId: null, message: "Batch 3 schedule updated", time: "1 hour ago", read: false },
+    { id: 3, franchiseId: 2, message: "Payment received from Ahilya Nagar", time: "Yesterday", read: false },
+    { id: 4, franchiseId: null, message: "Attendance report is now available", time: "2 days ago", read: false },
+    { id: 5, franchiseId: null, message: "Upcoming workshop: React Basics", time: "3 days ago", read: false },
+    { id: 6, franchiseId: 1, message: "New staff member added to Shraddha takmoge Pune Wagholi", time: "Just now", read: false }
+  ]);
+
+  const franchises = [
+    { id: 1, name: "Pune Wagholi" },
+    { id: 2, name: "Ahilya Nagar" },
+  ];
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   const handleLogin = (credentials) => {
-    // Mock authentication - in real app, this would call an API
     const userData = {
       name: getRoleDisplayName(credentials.role),
       role: credentials.role,
@@ -44,32 +60,34 @@ const Index = () => {
     setActiveItem("Dashboard");
   };
 
+  const handleNotificationClick = () => {
+    setActiveItem("Notifications");
+  };
+
   const renderContent = () => {
     switch (activeItem) {
       case "Dashboard":
         return <DashboardContent userRole={user?.role || ""} />;
       case "Franchise Management":
         return <FranchiseManagement />;
-      case "Staff Management":
+      case "Notifications":
         return (
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Staff Management</h2>
-            <p className="text-muted-foreground">Staff management module coming soon...</p>
-          </div>
-        );
-      case "Student Management":
-        return (
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Student Management</h2>
-            <p className="text-muted-foreground">Student management module coming soon...</p>
-          </div>
-        );
-      case "Payments & Billing":
-        return (
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Payments & Billing</h2>
-            <p className="text-muted-foreground">Payment management module coming soon...</p>
-          </div>
+          <NotificationPage
+            franchises={franchises}
+            notifications={notifications}
+            onMarkRead={(id) => {
+              setNotifications(
+                notifications.map((n) =>
+                  n.id === id ? { ...n, read: true } : n
+                )
+              );
+            }}
+            onMarkAllRead={() => {
+              setNotifications(
+                notifications.map((n) => ({ ...n, read: true }))
+              );
+            }}
+          />
         );
       default:
         return (
@@ -87,30 +105,29 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Header user={user} onLogout={handleLogout} />
+      <Header
+        user={user}
+        onLogout={handleLogout}
+        unreadCount={unreadCount}
+        onBellClick={handleNotificationClick}
+      />
       <div className="flex flex-1 overflow-hidden">
-        <div
-          className={cn(
-            "transition-all duration-300 flex-shrink-0",
-            sidebarCollapsed ? "w-16" : "w-64"
-          )}
-        >
+        <div className={cn("transition-all duration-300 flex-shrink-0", sidebarCollapsed ? "w-16" : "w-64")}>
           <Sidebar
             userRole={user?.role || ""}
             activeItem={activeItem}
-            onItemClick={setActiveItem}
+            onItemClick={(item) => {
+              setActiveItem(item);
+              if (item === "Notifications") handleNotificationClick();
+            }}
             collapsed={sidebarCollapsed}
+            unreadCount={unreadCount}
           />
         </div>
         <main className="flex-1 overflow-auto">
           <div className="p-6">
             <div className="flex items-center mb-6">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="mr-4"
-              >
+              <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="mr-4">
                 {sidebarCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
               </Button>
               <div className="text-sm text-muted-foreground">
