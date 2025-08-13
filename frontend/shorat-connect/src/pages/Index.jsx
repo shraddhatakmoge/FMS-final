@@ -3,13 +3,15 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import  {Header}  from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
-import { FranchiseManagement } from "@/components/Franchise/FranchiseManagement";
+
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StaffManagement from "../components/staff/staffmanagement";
 import StudentManagement from "../components/Student/StudentManagement";
 import BatchManagement from "../components/Batches/BAtchManagement";
+import FranchiseManagement from "../components/Franchise/FranchiseManagement";
+import ReportAnalysis from "../components/Report and Analysis/ReportAnalysis";
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -51,8 +53,10 @@ const Index = () => {
     switch (activeItem) {
       case "Staff Management":
         return <StaffManagement/>;
+      case "Reports & Analytics":
+        return <ReportAnalysis/>;
       case "Batch Management":
-        return <BatchManagement/>
+        return <BatchManagement/>;
       case "Student Management":
         return <StudentManagement/>;
       case "Dashboard":
