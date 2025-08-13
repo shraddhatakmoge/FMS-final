@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StaffManagement from "../components/staff/staffmanagement";
+import StudentManagement from "../components/Student/StudentManagement";
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -49,6 +50,9 @@ const Index = () => {
     switch (activeItem) {
       case "Staff Management":
           return <StaffManagement/>;
+
+      case "Student Management":
+          return <StudentManagement/>;
       case "Dashboard":
         return <DashboardContent userRole={user?.role || ""} />;
       case "Franchise Management":

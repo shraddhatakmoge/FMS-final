@@ -245,7 +245,7 @@ export default function StaffManagement() {
         </div>
 
         {/* Top stats */}
-        <section className="grid gap-4 md:grid-cols-5 ">
+        <section className="grid gap-4 md:grid-cols-3 ">
           <StatCard title={<span className="text-xl">Total Staff</span>} value={totals.total} icon={Users} footer={`Avg Attendance: ${totals.avgAttendance}%`} />
           <StatCard title={<span className="text-xl">Active Staff</span>} value={totals.activeCount} icon={ShieldCheck} footer={`${pct(totals.activeCount, totals.total)}% active`} />
           <StatCard title={<span className="text-xl">Leave Request</span>}  value={leaveSummary.list.length} icon={CalendarDays} footer={`A:${leaveSummary.counts.Approved} · P:${leaveSummary.counts.Pending} · R:${leaveSummary.counts.Rejected}`} />
