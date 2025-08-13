@@ -44,8 +44,8 @@ export const LoginForm = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-red-900 p-4">
-      <Card className="w-full max-w-md shadow-xl border border-red-600 bg-black/90 text-white rounded-xl transition-transform transform hover:scale-[1.02]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#f0000b] to-white p-7">
+      <Card className="w-full max-w-md shadow-2xl border border-[#a8a8a8] bg-white text-red-700 rounded-xl transition-transform transform hover:scale-[1.02]">
         <CardHeader className="text-center flex flex-col items-center">
           <img
             src="favicon.ico"
@@ -55,7 +55,7 @@ export const LoginForm = ({ onLogin }) => {
           <CardTitle className="text-3xl font-bold text-red-500">
             Shorat Innovations
           </CardTitle>
-          <CardDescription className="text-gray-300">
+          <CardDescription className="text-[#555555]">
             Franchise Management System
           </CardDescription>
         </CardHeader>
@@ -63,19 +63,19 @@ export const LoginForm = ({ onLogin }) => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label className="text-red-400">Email</Label>
+              <Label className="text-black">Email</Label>
               <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500"
+                className="bg-white text-black border border-red-500 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
             <div>
-              <Label className="text-red-400">Password</Label>
+              <Label className="text-black">Password</Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -83,7 +83,7 @@ export const LoginForm = ({ onLogin }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500"
+                  className="bg-white text-black border border-red-500 focus:ring-red-500 focus:border-red-500"
                 />
                 <Button
                   type="button"
@@ -102,12 +102,12 @@ export const LoginForm = ({ onLogin }) => {
             </div>
 
             <div>
-              <Label className="text-red-400">Role</Label>
+              <Label className="text-black">Role</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500">
+                <SelectTrigger className="bg-white text-black border border-red-500 focus:ring-red-500 focus:border-red-500">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
-                <SelectContent className="bg-black text-white border border-red-500">
+                <SelectContent className="bg-white text-black border border-red-500">
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="franchise_head">Franchise Head</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
