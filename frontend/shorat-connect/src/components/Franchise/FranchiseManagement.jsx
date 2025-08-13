@@ -225,7 +225,7 @@ export const FranchiseManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              {/* <div>
                 <Label>Students</Label>
                 <Input
                   type="number"
@@ -237,7 +237,7 @@ export const FranchiseManagement = () => {
                     })
                   }
                 />
-              </div>
+              </div> */}
               <div>
                 <Label>Staff</Label>
                 <Input
@@ -248,7 +248,7 @@ export const FranchiseManagement = () => {
                   }
                 />
               </div>
-              <div>
+              {/* <div>
                 <Label>Revenue</Label>
                 <Input
                   value={newFranchise.revenue}
@@ -259,8 +259,8 @@ export const FranchiseManagement = () => {
                     })
                   }
                 />
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <Label>Performance %</Label>
                 <Input
                   type="number"
@@ -272,7 +272,7 @@ export const FranchiseManagement = () => {
                     })
                   }
                 />
-              </div>
+              </div> */}
               <div>
                 <Label>Established</Label>
                 <Input
