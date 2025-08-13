@@ -11,7 +11,6 @@ import {
   Bell,
   Award,
   Target,
-  IdCard,
   Upload,
   MessageSquare,
   Star,
@@ -39,17 +38,10 @@ export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false }
       { icon: BookOpen, label: "Course Management" },
       { icon: Calendar, label: "Batch Management" },
       { icon: ClipboardCheck, label: "Attendance System" },
-      { icon: TrendingUp, label: "Progress & Grades" },
       { icon: FileText, label: "Reports & Analytics" },
-      { icon: Award, label: "Certificates" },
-      { icon: Target, label: "Lead Management" },
-      { icon: IdCard, label: "ID Card Generator" },
-      { icon: Upload, label: "File Management" },
       { icon: Calendar, label: "Events & Workshops" },
       { icon: MessageSquare, label: "Chat System" },
       { icon: Star, label: "Feedback System" },
-      { icon: Gift, label: "Scholarships" },
-      { icon: Briefcase, label: "Placement Tracker" },
     ];
 
     const franchiseItems = [

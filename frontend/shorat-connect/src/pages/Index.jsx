@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { Header } from "@/components/Layout/Header";
+import  {Header}  from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { FranchiseManagement } from "@/components/Franchise/FranchiseManagement";

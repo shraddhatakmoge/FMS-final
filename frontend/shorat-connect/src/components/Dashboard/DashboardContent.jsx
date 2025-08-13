@@ -10,8 +10,8 @@ export const DashboardContent = ({ userRole }) => {
     switch (userRole) {
       case "admin":
         return [
-          { title: "Total Franchises", value: 25, icon: Building2, trend: { value: 12, isPositive: true }, color: "primary" },
-          { title: "Total Staff", value: 148, icon: Users, trend: { value: 8, isPositive: true }, color: "info" },
+          { title: "Total Franchises", value: 2, icon: Building2, trend: { value: 12, isPositive: true }, color: "primary" },
+          { title: "Total Staff", value:23 , icon: Users, trend: { value: 8, isPositive: true }, color: "info" },
           { title: "Total Students", value: "2,847", icon: GraduationCap, trend: { value: 15, isPositive: true }, color: "success" },
           { title: "Monthly Revenue", value: "₹18,45,000", icon: CreditCard, trend: { value: 23, isPositive: true }, color: "warning" },
           { title: "Course Completion", value: "87%", icon: TrendingUp, trend: { value: 5, isPositive: true }, color: "success" },
