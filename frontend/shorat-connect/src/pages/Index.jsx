@@ -7,7 +7,7 @@ import { FranchiseManagement } from "@/components/Franchise/FranchiseManagement"
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import StaffManagement from "../components/staff/staffmanagement";
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -27,6 +27,7 @@ const Index = () => {
 
   const getRoleDisplayName = (role) => {
     switch (role) {
+  
       case "admin":
         return "Admin User";
       case "franchise_head":
@@ -46,6 +47,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeItem) {
+      case "Staff Management":
+          return <StaffManagement/>;
       case "Dashboard":
         return <DashboardContent userRole={user?.role || ""} />;
       case "Franchise Management":
