@@ -12,17 +12,30 @@ import {
   Star,
   Target,
   MessageSquare,
-  Home
+  Home,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false, unreadCount = 0 }) => {
+export const Sidebar = ({
+  userRole,
+  activeItem,
+  onItemClick,
+  collapsed = false,
+  unreadCount = 0,
+  mobileOpen,
+  onClose,
+}) => {
   const getMenuItems = () => {
     const commonItems = [
       { icon: Home, label: "Dashboard" },
-      { icon: Bell, label: "Notifications", badge: unreadCount > 0 ? unreadCount.toString() : null },
+      {
+        icon: Bell,
+        label: "Notifications",
+        badge: unreadCount > 0 ? unreadCount.toString() : null,
+      },
     ];
 
     const adminItems = [
@@ -81,7 +94,7 @@ export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false, 
         "w-full justify-start mb-1 relative group hover:text-red-600",
         collapsed ? "px-2" : "px-3",
         activeItem === item.label &&
-          "bg-primary bg-[#f0000b] hover:bg-[#fd3535] text-primary-foreground shadow-medium"
+          "bg-[#f0000b] hover:bg-[#fd3535] text-white shadow-medium"
       )}
       onClick={() => onItemClick(item.label)}
     >
@@ -96,28 +109,53 @@ export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false, 
           )}
         </>
       )}
-      {collapsed && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
-          {item.label}
-        </div>
-      )}
     </Button>
   );
 
   return (
-    <aside
-      className={cn(
-        "bg-card border-r border-border h-full transition-all duration-300 shadow-soft",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      <div className="p-4">
-        <div className="space-y-1">
-          {menuItems.map((item, index) => (
-            <MenuItem key={index} item={item} />
-          ))}
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "hidden md:block bg-card border-r border-border h-full transition-all duration-300 shadow-soft",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
+        <div className="p-4">
+          <div className="space-y-1">
+            {menuItems.map((item, index) => (
+              <MenuItem key={index} item={item} />
+            ))}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {/* Mobile Sidebar */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div className="bg-card w-64 h-full p-4 shadow-lg overflow-y-auto relative">
+            {/* Close Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="absolute right-2 top-2"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <div className="mt-10 space-y-1">
+              {menuItems.map((item, index) => (
+                <MenuItem key={index} item={item} />
+              ))}
+            </div>
+          </div>
+          {/* Overlay */}
+          <div
+            className="flex-1 bg-black bg-opacity-50"
+            onClick={onClose}
+          ></div>
+        </div>
+      )}
+    </>
   );
 };
