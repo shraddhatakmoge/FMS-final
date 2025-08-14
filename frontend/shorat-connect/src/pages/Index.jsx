@@ -7,17 +7,16 @@ import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-<<<<<<< HEAD
-import CourseManagement from "../components/course/CourseManagement";
-import StaffManagement from "../components/staff/staffmanagement";
-import StudentManagement from "../components/Student/StudentManagement";
-=======
 import ReportsAnalytics from "../components/Report and Analysis/ReportAnalysis";
 import StaffManagement from "../components/staff/staffmanagement";
 import StudentManagement from "../components/Student/StudentManagement";
 import BatchManagement from "../components/Batches/BatchManagement";
 import FranchiseManagement from "../components/Franchise/FranchiseManagement";
->>>>>>> 43c2a517e7ca9f304c1bad07856f76cdc6fa23eb
+import CourseManagement from "../components/course/CourseManagement";
+import EventsDashboard from "../components/Events&Workshop/Events&Workshops";
+
+
+
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -87,26 +86,20 @@ const Index = () => {
   const renderContent = () => {
     switch (activeItem) {
       case "Staff Management":
-<<<<<<< HEAD
-        return <StaffManagement />;
-=======
         return <StaffManagement/>;
       case "Batch Management":
         return <BatchManagement/>;
->>>>>>> 43c2a517e7ca9f304c1bad07856f76cdc6fa23eb
       case "Student Management":
         return <StudentManagement />;
+      case "Events & Workshops":
+          return <EventsDashboard/>;
       case "Dashboard":
         return <DashboardContent userRole={user?.role || ""} />;
       case "Franchise Management":
         return <FranchiseManagement />;
-<<<<<<< HEAD
-      case "Notifications":
-=======
       case "Reports & Analytics":
         return <ReportsAnalytics/>;
-      case "Staff Management":
->>>>>>> 43c2a517e7ca9f304c1bad07856f76cdc6fa23eb
+      case "Notifications":
         return (
           <NotificationPage
             franchises={franchises}

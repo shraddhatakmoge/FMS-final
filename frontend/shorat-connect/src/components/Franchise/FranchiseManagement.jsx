@@ -32,9 +32,9 @@ import { Building, Plus, ShieldCheck, ShieldX } from "lucide-react";
 
 export default function FranchiseManagement() {
   const [franchises, setFranchises] = useState([
-    { id: 1, name: "Mumbai Central", location: "Mumbai", students: 120, start: "01 Jan 2023", status: "Active" },
-    { id: 2, name: "Pune East", location: "Pune", students: 80, start: "15 Feb 2023", status: "Active" },
-    { id: 3, name: "Delhi West", location: "Delhi", students: 65, start: "10 Mar 2023", status: "Inactive" },
+    { id: 1, name: "Wagholi ", location: "Pune", students: 120, start: "01 Jan 2023", status: "Active" },
+    { id: 2, name: "Ahilya Nagar", location: "AhilyaNagar", students: 80, start: "15 Feb 2023", status: "Active" },
+    { id: 3, name: "Sambhaji Nagar", location: "SambhajiNagar", students: 65, start: "10 Mar 2023", status: "Inactive" },
   ]);
 
   const [search, setSearch] = useState("");
@@ -200,7 +200,7 @@ export default function FranchiseManagement() {
         </Card>
 
         <Card className="border shadow-sm relative">
-          <ShieldCheck className="absolute top-3 right-3 h-5 w-5 text-green-500" />
+          <ShieldCheck className="absolute top-3 right-3 h-5 w-5 " />
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Active</CardTitle>
           </CardHeader>
