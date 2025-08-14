@@ -3,20 +3,14 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import  {Header}  from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
-
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-<<<<<<< HEAD
-import ReportsAnalysis from "../components/Report and Analysis/ReportAnalysis";
-
-=======
+import ReportsAnalytics from "../components/Report and Analysis/ReportAnalysis";
 import StaffManagement from "../components/staff/staffmanagement";
 import StudentManagement from "../components/Student/StudentManagement";
 import BatchManagement from "../components/Batches/BatchManagement";
 import FranchiseManagement from "../components/Franchise/FranchiseManagement";
-import ReportAnalysis from "../components/Report and Analysis/ReportAnalysis";
->>>>>>> 7a4c84301ca05c2048434d1706dca70d3e3f634e
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -41,8 +35,6 @@ const Index = () => {
         return "Admin User";
       case "franchise_head":
         return "Franchise Head";
-      case "Reports & Analytics":
-        return "ReportAnalysis";
       case "staff":
         return "Staff Member";
       default:
@@ -60,8 +52,6 @@ const Index = () => {
     switch (activeItem) {
       case "Staff Management":
         return <StaffManagement/>;
-      case "Reports & Analytics":
-        return <ReportAnalysis/>;
       case "Batch Management":
         return <BatchManagement/>;
       case "Student Management":
@@ -70,6 +60,8 @@ const Index = () => {
         return <DashboardContent userRole={user?.role || ""} />;
       case "Franchise Management":
         return <FranchiseManagement />;
+      case "Reports & Analytics":
+        return <ReportsAnalytics/>;
       case "Staff Management":
         return (
           <div className="p-8 text-center">
