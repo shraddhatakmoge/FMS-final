@@ -10,9 +10,7 @@ import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { Users, UserPlus, Building2, CalendarDays, CheckCircle2, XCircle, Clock3, Mail, Phone, IdCard, ShieldCheck } from "lucide-react";
 
-// ---------------------------------------------
-// Mock data (swap with API calls later)
-// ---------------------------------------------
+
 const seedAttendance = (days = 30) => Array.from({ length: days }, (_, i) => ({ day: i + 1, present: Math.random() > 0.12 ? 1 : 0 }));
 
 const STAFF = [

@@ -2,11 +2,14 @@
   "name": "franchise_magn_system",
   "version": "1.0.0",
   "scripts": {
-    "backend": "cd backend/FMSbackend && python manage.py runserver",
+    "backend": "cd backend/FMSbackend && ..\\venv\\Scripts\\python.exe manage.py runserver",
     "frontend": "cd frontend/shorat-connect && npm start",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "devDependencies": {
     "concurrently": "^9.2.0"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13"
   }
 }

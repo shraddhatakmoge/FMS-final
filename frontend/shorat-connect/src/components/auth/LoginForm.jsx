@@ -44,18 +44,18 @@ export const LoginForm = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-red-900 p-4">
-      <Card className="w-full max-w-md shadow-xl border border-red-600 bg-black/90 text-white rounded-xl transition-transform transform hover:scale-[1.02]">
-        <CardHeader className="text-center flex flex-col items-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-red-900 p-4 sm:p-6 lg:p-8">
+      <Card className="w-full max-w-sm sm:max-w-md shadow-xl border border-red-600 bg-black/90 text-white rounded-xl transition-transform transform hover:scale-[1.02]">
+        <CardHeader className="text-center flex flex-col items-center space-y-2">
           <img
             src="favicon.ico"
             alt="Shorat Innovations Logo"
-            className="w-12 h-20 object-contain mb-2 animate-pulse"
+            className="w-10 h-16 sm:w-12 sm:h-20 object-contain mb-2 animate-pulse"
           />
-          <CardTitle className="text-3xl font-bold text-red-500">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-red-500">
             Shorat Innovations
           </CardTitle>
-          <CardDescription className="text-gray-300">
+          <CardDescription className="text-gray-300 text-sm sm:text-base">
             Franchise Management System
           </CardDescription>
         </CardHeader>
@@ -63,19 +63,19 @@ export const LoginForm = ({ onLogin }) => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label className="text-red-400">Email</Label>
+              <Label className="text-red-400 text-sm sm:text-base">Email</Label>
               <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500"
+                className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
               />
             </div>
 
             <div>
-              <Label className="text-red-400">Password</Label>
+              <Label className="text-red-400 text-sm sm:text-base">Password</Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -83,7 +83,7 @@ export const LoginForm = ({ onLogin }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500"
+                  className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base pr-10"
                 />
                 <Button
                   type="button"
@@ -102,9 +102,9 @@ export const LoginForm = ({ onLogin }) => {
             </div>
 
             <div>
-              <Label className="text-red-400">Role</Label>
+              <Label className="text-red-400 text-sm sm:text-base">Role</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500">
+                <SelectTrigger className="bg-black text-white border border-red-500 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
                 <SelectContent className="bg-black text-white border border-red-500">
@@ -118,7 +118,7 @@ export const LoginForm = ({ onLogin }) => {
 
             <Button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+              className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all text-sm sm:text-base py-2 sm:py-3"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
