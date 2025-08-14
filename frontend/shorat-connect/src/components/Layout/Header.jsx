@@ -17,7 +17,7 @@ export const Header = ({ user, onLogout }) => {
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left section: Logo + Search */}
         <div className="flex items-center space-x-4">
-          <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-lg">
+          <div className="bg-[#f0000b] text-white px-4 py-2 rounded-lg font-bold text-lg">
             Shorat Innovations
           </div>
           <div className="relative">

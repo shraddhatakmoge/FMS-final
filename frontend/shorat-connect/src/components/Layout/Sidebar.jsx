@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+
 export const Sidebar = ({ userRole, activeItem, onItemClick, collapsed = false }) => {
   const getMenuItems = () => {
     const commonItems = [
