@@ -9,7 +9,7 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StaffManagement from "../components/staff/staffmanagement";
 import StudentManagement from "../components/Student/StudentManagement";
-import BatchManagement from "../components/Batches/BAtchManagement";
+import BatchManagement from "../components/Batches/BatchManagement";
 import FranchiseManagement from "../components/Franchise/FranchiseManagement";
 import ReportAnalysis from "../components/Report and Analysis/ReportAnalysis";
 const Index = () => {
