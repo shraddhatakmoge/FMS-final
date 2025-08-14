@@ -16,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -25,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 import { Building, Plus, ShieldCheck, ShieldX } from "lucide-react";
 
 export default function FranchiseManagement() {
@@ -37,6 +40,17 @@ export default function FranchiseManagement() {
   const [search, setSearch] = useState("");
   const [selectedFranchise, setSelectedFranchise] = useState(null);
 
+  // State for adding new franchise
+  const [newFranchise, setNewFranchise] = useState({
+    name: "",
+    location: "",
+    students: "",
+    staff: "",
+    status: "",
+    start: "",
+    established: "",
+  });
+
   const filteredFranchises = useMemo(
     () => franchises.filter((f) => f.name.toLowerCase().includes(search.toLowerCase())),
     [search, franchises]
@@ -48,13 +62,40 @@ export default function FranchiseManagement() {
         f.id === id ? { ...f, status: f.status === "Active" ? "Inactive" : "Active" } : f
       )
     );
-
-    // Also update selected franchise panel instantly if it's the same
     setSelectedFranchise((prev) =>
       prev && prev.id === id
         ? { ...prev, status: prev.status === "Active" ? "Inactive" : "Active" }
         : prev
     );
+  };
+
+  const handleAddFranchise = () => {
+    if (!newFranchise.name || !newFranchise.location || !newFranchise.status) {
+      alert("Please fill all required fields");
+      return;
+    }
+    setFranchises((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        name: newFranchise.name,
+        location: newFranchise.location,
+        students: parseInt(newFranchise.students) || 0,
+        staff: parseInt(newFranchise.staff) || 0,
+        start: newFranchise.start || "N/A",
+        established: newFranchise.established || "N/A",
+        status: newFranchise.status,
+      },
+    ]);
+    setNewFranchise({
+      name: "",
+      location: "",
+      students: "",
+      staff: "",
+      status: "",
+      start: "",
+      established: "",
+    });
   };
 
   return (
@@ -90,25 +131,57 @@ export default function FranchiseManagement() {
                 <DialogTitle>Add New Franchise</DialogTitle>
               </DialogHeader>
               <form className="space-y-4">
-                <Input placeholder="Franchise Name" />
-                <Input placeholder="Location" />
-                <Input type="date" placeholder="Start Date" />
-                <Select>
+                <Input
+                  placeholder="Franchise Name"
+                  value={newFranchise.name}
+                  onChange={(e) => setNewFranchise({ ...newFranchise, name: e.target.value })}
+                />
+                <Input
+                  placeholder="Location"
+                  value={newFranchise.location}
+                  onChange={(e) => setNewFranchise({ ...newFranchise, location: e.target.value })}
+                />
+                <Input
+                  type="date"
+                  placeholder="Start Date"
+                  value={newFranchise.start}
+                  onChange={(e) => setNewFranchise({ ...newFranchise, start: e.target.value })}
+                />
+                <Select
+                  value={newFranchise.status}
+                  onValueChange={(value) => setNewFranchise({ ...newFranchise, status: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  type="submit"
-                  className="bg-red-600 hover:bg-red-700 w-full"
-                >
-                  Save
-                </Button>
+                <div>
+                  <Label>Staff</Label>
+                  <Input
+                    type="number"
+                    value={newFranchise.staff}
+                    onChange={(e) => setNewFranchise({ ...newFranchise, staff: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Established</Label>
+                  <Input
+                    type="date"
+                    value={newFranchise.established}
+                    onChange={(e) => setNewFranchise({ ...newFranchise, established: e.target.value })}
+                  />
+                </div>
               </form>
+              <DialogFooter>
+                <Button onClick={handleAddFranchise}>Save</Button>
+                <DialogClose asChild>
+                  <Button variant="secondary">Cancel</Button>
+                </DialogClose>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>

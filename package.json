@@ -10,6 +10,11 @@
     "concurrently": "^9.2.0"
   },
   "dependencies": {
+<<<<<<< HEAD
     "dayjs": "^1.11.13"
+=======
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1"
+>>>>>>> 43c2a517e7ca9f304c1bad07856f76cdc6fa23eb
   }
 }
