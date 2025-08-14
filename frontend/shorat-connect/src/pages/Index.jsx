@@ -7,6 +7,8 @@ import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReportsAnalysis from "../components/Report and Analysis/ReportAnalysis";
+
 import StaffManagement from "../components/staff/staffmanagement";
 import StudentManagement from "../components/Student/StudentManagement";
 import BatchManagement from "../components/Batches/BatchManagement";
@@ -36,6 +38,8 @@ const Index = () => {
         return "Admin User";
       case "franchise_head":
         return "Franchise Head";
+      case "Reports & Analytics":
+        return "ReportAnalysis";
       case "staff":
         return "Staff Member";
       default:
@@ -63,6 +67,8 @@ const Index = () => {
         return <DashboardContent userRole={user?.role || ""} />;
       case "Franchise Management":
         return <FranchiseManagement />;
+      case "Reports & Analytics":
+        return <ReportAnalysis/>;
       case "Staff Management":
         return (
           <div className="p-8 text-center">
