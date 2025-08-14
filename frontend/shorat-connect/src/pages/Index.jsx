@@ -7,6 +7,7 @@ import { FranchiseManagement } from "@/components/Franchise/FranchiseManagement"
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReportsAnalysis from "../components/Report and Analysis/ReportAnalysis";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -31,6 +32,8 @@ const Index = () => {
         return "Admin User";
       case "franchise_head":
         return "Franchise Head";
+      case "Reports & Analytics":
+        return "ReportAnalysis";
       case "staff":
         return "Staff Member";
       default:
