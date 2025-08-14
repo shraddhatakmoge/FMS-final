@@ -4,14 +4,13 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { Header } from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
-import { FranchiseManagement } from "@/components/Franchise/FranchiseManagement";
+
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CourseManagement from "../components/course/CourseManagement";
 import StaffManagement from "../components/staff/staffmanagement";
 import StudentManagement from "../components/Student/StudentManagement";
-
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
