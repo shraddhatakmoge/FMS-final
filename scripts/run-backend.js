@@ -2,36 +2,48 @@ const { execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
-const backendPath = path.join(__dirname, "../backend/FMSbackend");
-const venvPath = path.join(__dirname, "../venv");
-
 try {
-  console.log("Setting up Python virtual environment...");
+  console.log("Starting backend...");
 
-  
+  const backendPath = path.join(__dirname, "../backend/FMSbackend");
+  const venvPath = path.join(__dirname, "../venv");
+  const isWindows = process.platform === "win32";
+
+  const pythonExec = isWindows
+    ? path.join(venvPath, "Scripts", "python.exe")
+    : path.join(venvPath, "bin", "python");
+
+  const pipExec = isWindows
+    ? path.join(venvPath, "Scripts", "pip.exe")
+    : path.join(venvPath, "bin", "pip");
+
+  // Step 1: Create venv if missing
   if (!fs.existsSync(venvPath)) {
-    console.log("Creating virtual environment...");
-    execSync(`python -m venv ${venvPath}`, { stdio: "inherit" });
+    console.log("Virtual environment not found! Creating venv...");
+
+    // Create venv using system python
+    execSync(`"${isWindows ? "python" : "python3"}" -m venv "${venvPath}"`, { stdio: "inherit" });
+
+    console.log("Upgrading pip...");
+    execSync(`"${pipExec}" install --upgrade pip`, { stdio: "inherit" });
+
+    console.log("Installing backend dependencies...");
+    execSync(`"${pipExec}" install -r "${path.join(backendPath, "requirements.txt")}"`, { stdio: "inherit" });
   }
 
-  
-  const pipPath = path.join(venvPath, "Scripts", "pip");
-  const reqFile = path.join(backendPath, "requirements.txt");
-
-  if (fs.existsSync(reqFile)) {
-    console.log("Installing Python dependencies...");
-    execSync(`"${pipPath}" install -r "${reqFile}"`, { stdio: "inherit" });
-  } else {
-    console.log("No requirements.txt found. Installing Django manually...");
-    execSync(`"${pipPath}" install django djangorestframework`, { stdio: "inherit" });
+  // Step 2: Ensure Django is installed (for safety)
+  try {
+    execSync(`"${pipExec}" show django`, { stdio: "inherit" });
+  } catch {
+    console.log("Django not found, installing...");
+    execSync(`"${pipExec}" install django`, { stdio: "inherit" });
   }
 
- 
-  const pythonPath = path.join(venvPath, "Scripts", "python");
-  console.log("Starting Django backend server...");
-  execSync(`cd "${backendPath}" && "${pythonPath}" manage.py runserver`, { stdio: "inherit" });
+  // Step 3: Start Django server
+  console.log("Starting Django server...");
+  execSync(`"${pythonExec}" "${path.join(backendPath, "manage.py")}" runserver`, { stdio: "inherit" });
 
 } catch (err) {
-  console.error("Backend failed to start:", err);
+  console.error("Backend failed to start:", err.message);
   process.exit(1);
 }
