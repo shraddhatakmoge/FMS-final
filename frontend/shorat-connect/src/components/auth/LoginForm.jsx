@@ -22,13 +22,14 @@ import { useToast } from "@/hooks/use-toast";
 export const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(""); // 👈 role state
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     if (!email || !password || !role) {
       toast({
         title: "Error",
@@ -37,9 +38,51 @@ export const LoginForm = ({ onLogin }) => {
       });
       return;
     }
+
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    onLogin({ email, password, role });
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/accounts/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role }), // 👈 send role also
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // ✅ Save token, role, and branch
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role || role);     // use backend role if available
+        localStorage.setItem("branch", data.branch || "");
+        localStorage.setItem("email", email);
+
+        toast({
+          title: "Login Successful",
+          description: data.message,
+          variant: "default",
+        });
+
+        onLogin({
+          email,
+          role: data.role || role,
+          branch: data.branch || "",
+          token: data.token,
+        });
+      } else {
+        toast({
+          title: "Login Failed",
+          description: data.error || "Invalid credentials",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Server error. Please try again.",
+        variant: "destructive",
+      });
+    }
     setIsLoading(false);
   };
 
@@ -59,7 +102,6 @@ export const LoginForm = ({ onLogin }) => {
             Franchise Management System
           </CardDescription>
         </CardHeader>
-
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -92,15 +134,12 @@ export const LoginForm = ({ onLogin }) => {
                   className="absolute right-0 top-0 h-full px-3 text-red-400 hover:text-red-200"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? (
-                    <Eye className="h-4 w-4" />
-                  ) : (
-                    <EyeOff className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
 
+            {/* Role selection dropdown */}
             <div>
               <Label className="text-black">Role</Label>
               <Select value={role} onValueChange={setRole}>
@@ -111,7 +150,6 @@ export const LoginForm = ({ onLogin }) => {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="franchise_head">Franchise Head</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
                 </SelectContent>
               </Select>
             </div>

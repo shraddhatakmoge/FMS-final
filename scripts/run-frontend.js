@@ -1,19 +1,18 @@
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
-
-const frontendPath = path.join(__dirname, "../frontend/shorat-connect");
-const nodeModulesPath = path.join(frontendPath, "node_modules");
-
-process.chdir(frontendPath);
-
-
-if (!fs.existsSync(nodeModulesPath)) {
-  console.log("📦 Installing frontend dependencies...");
-  execSync("npm install", { stdio: "inherit", shell: true });
+{
+  "name": "franchise_magn_system",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13",
+    "framer-motion": "^12.23.12"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.0.0"
+  }
 }
-
-
-
-
-execSync("npm run dev", { stdio: "inherit", shell: true });

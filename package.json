@@ -2,12 +2,10 @@
   "name": "franchise_magn_system",
   "version": "1.0.0",
   "scripts": {
-  "backend": "node scripts/run-backend.js",
-  "frontend": "node scripts/run-frontend.js",
-  
-  "dev": "concurrently \"npm run backend\" \"npm run frontend\""
-},
+    "frontend": "node scripts/run-frontend.js"
+  },
   "dependencies": {
+    "axios": "^1.11.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.23.12"
   }
