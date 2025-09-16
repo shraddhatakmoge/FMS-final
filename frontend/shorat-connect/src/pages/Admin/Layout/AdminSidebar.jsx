@@ -16,58 +16,50 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NavLink } from "react-router-dom";
 
 export const AdminSidebar = ({
-  activeItem,
-  onItemClick,
   collapsed = false,
   unreadCount = 0,
   mobileOpen,
   onClose,
 }) => {
   const menuItems = [
-    { icon: Home, label: "Dashboard", key: "dashboard" },
+    { icon: Home, label: "Dashboard", path: "dashboard" },
     {
       icon: Bell,
       label: "Notifications",
-      key: "notifications",
+      path: "notifications",
       badge: unreadCount > 0 ? unreadCount.toString() : null,
     },
-    { icon: Building2, label: "Franchise Management", key: "franchise" },
-    { icon: CreditCard, label: "Payments & Billing", key: "payments" },
-    { icon: BookOpen, label: "Course Management", key: "course" },
-    { icon: ClipboardCheck, label: "Attendance System", key: "attendance" },
-    { icon: FileText, label: "Reports & Analytics", key: "reports" },
-    { icon: Calendar, label: "Events & Workshops", key: "events" },
-    { icon: Star, label: "Feedback System", key: "feedback" },
-
-    // ✅ Added Settings at the end
-    { icon: Settings, label: "Settings", key: "settings" },
+    { icon: Building2, label: "Franchise Management", path: "franchise" },
+    { icon: CreditCard, label: "Payments & Billing", path: "payments" },
+    { icon: BookOpen, label: "Course Management", path: "course" },
+    { icon: ClipboardCheck, label: "Attendance System", path: "attendance" },
+    { icon: FileText, label: "Reports & Analytics", path: "reports" },
+    { icon: Calendar, label: "Events & Workshops", path: "events" },
+    { icon: Star, label: "Feedback System", path: "feedback" },
+    { icon: Settings, label: "Settings", path: "settings" },
   ];
 
   const MenuItem = ({ item }) => (
-    <Button
-      variant={activeItem === item.key ? "default" : "ghost"}
-      className={cn(
-        "w-full justify-start mb-1 relative group",
-        collapsed ? "px-2" : "px-3",
-        activeItem === item.key
-          ? "bg-[#f0000b] text-white shadow-md hover:bg-[#fd3535]"
-          : "hover:text-red-600"
-      )}
-      onClick={() => onItemClick(item.key)}
+    <NavLink
+      to={`/admin/${item.path}`}
+      className={({ isActive }) =>
+        cn(
+          "w-full flex items-center justify-start mb-1 px-3 py-2 rounded-md transition",
+          collapsed ? "px-2" : "px-3",
+          isActive
+            ? "bg-[#f0000b] text-white shadow-md"
+            : "hover:text-red-600 hover:bg-gray-100"
+        )
+      }
+      onClick={onClose} // close on mobile
     >
       <item.icon className={cn("h-4 w-4", collapsed ? "" : "mr-3")} />
       {!collapsed && (
         <>
-          <span
-            className={cn(
-              "flex-1 text-left",
-              activeItem === item.key && "text-white"
-            )}
-          >
-            {item.label}
-          </span>
+          <span className="flex-1 text-left">{item.label}</span>
           {item.badge && (
             <Badge variant="secondary" className="ml-auto text-xs">
               {item.badge}
@@ -75,7 +67,7 @@ export const AdminSidebar = ({
           )}
         </>
       )}
-    </Button>
+    </NavLink>
   );
 
   return (

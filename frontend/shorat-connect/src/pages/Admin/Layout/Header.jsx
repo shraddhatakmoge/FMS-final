@@ -2,7 +2,6 @@ import { Bell, Menu, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Header({
   onNotificationsClick,
@@ -10,20 +9,16 @@ export default function Header({
   onToggleSidebar,
   onGoHome,      // function to go to dashboard
   setActivePage, // 👈 pass from AdminLayout
+  onLogout,      // 👈 NEW: comes from App.jsx
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const navigate = useNavigate();
 
   const handleMenuClick = () => {
     setMenuOpen(!menuOpen);
     if (onToggleSidebar) {
       onToggleSidebar();
     }
-  };
-
-  const handleLogout = () => {
-    navigate("/login"); // back to login form
   };
 
   return (
@@ -97,7 +92,10 @@ export default function Header({
                 Profile
               </button>
               <button
-                onClick={handleLogout}
+                onClick={() => {
+                  setDropdownOpen(false);
+                  onLogout && onLogout(); // 👈 use App.jsx logout
+                }}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
               >
                 Logout
