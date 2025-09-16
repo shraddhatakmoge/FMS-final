@@ -13,8 +13,9 @@ export default defineConfig({
     host: "localhost",
     port: 5173,
     open: false,
-    // 👇 Important for React Router (SPA fallback)
-    historyApiFallback: true,
+   fs: {
+    strict: true,
+  },
   },
   preview: {
     port: 5173,

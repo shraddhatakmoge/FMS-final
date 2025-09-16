@@ -5,12 +5,11 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
         ('franchise_head', 'Franchise Head'),
-        ('staff', 'Staff'),
-        ('student', 'Student'),
+        ('staff', 'Staff')
     )
     # use email as unique identifier
     email = models.EmailField(unique=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="student")
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="admin")
     branch = models.CharField(max_length=100, blank=True, null=True)
 
     USERNAME_FIELD = "email"   # login with email instead of username

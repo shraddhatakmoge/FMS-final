@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import { AdminSidebar } from "../Layout/AdminSidebar";
+
+// Pages
 import { DashboardContent } from "../Dashboard/DashboardContent";
 import FranchiseManagement from "../Franchise/FranchiseManagement";
 import StaffManagement from "../../Franchise/staff/staffmanagement";
@@ -12,11 +15,15 @@ import AttendanceSystem from "../AttendanceSystem/AttendanceSystem";
 import ReportAnalysis from "../Report and Analysis/ReportAnalysis";
 import EventsWorkshop from "../Events&Workshop/EventsWorkshop";
 import FeedbackPage from "../Feedback/FeedbackPage";
-import { Menu, X } from "lucide-react";
-import AdminProfile from "../Profile/AdminProfile"; // ✅ NEW IMPORT
+import AdminProfile from "../Profile/AdminProfile";
 import AdminSetting from "../Setting/AdminSetting";
-export default function AdminLayout() {
-  const [activePage, setActivePage] = useState("dashboard"); // default dashboard
+
+import { Menu, X } from "lucide-react";
+import PaymentBilling from "../Payment&Billing/PaymentBilling";
+
+export default function AdminLayout({ onLogout }) {
+  const navigate = useNavigate();
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -43,68 +50,25 @@ export default function AdminLayout() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  // Switch page rendering
-  const renderContent = () => {
-  switch (activePage) {
-    case "dashboard":
-      return <DashboardContent />;
-    case "settings":
-      return <AdminSetting />;
-    case "franchise":
-      return <FranchiseManagement setActivePage={setActivePage} />; // ✅ FIX
-    case "course":
-      return <CourseManagement />;
-    case "staff":
-      return <StaffManagement setActivePage={setActivePage} />;
-    case "student":
-      return <StudentManagement setActivePage={setActivePage} />;
-    case "batch":
-      return <BatchManagement setActivePage={setActivePage} />;
-    case "attendance":
-      return <AttendanceSystem />;
-    case "reports":
-      return <ReportAnalysis />;
-    case "events":
-      return <EventsWorkshop />;
-    case "feedback":
-      return <FeedbackPage />;
-    case "notifications":
-      return (
-        <NotificationPage
-          franchises={franchises}
-          notifications={notifications}
-          onMarkRead={handleMarkRead}
-          onMarkAllRead={handleMarkAllRead}
-        />
-      );
-    case "profile":
-      return <AdminProfile />;
-    default:
-      return <DashboardContent />;
-  }
-};
-
-
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       {/* Header */}
       <Header
-        onNotificationsClick={() => setActivePage("notifications")}
+        onNotificationsClick={() => navigate("/admin/notifications")}
         unreadCount={notifications.filter((n) => !n.read).length}
-        onGoHome={() => setActivePage("dashboard")} // ✅ Clicking Shorat Innovations = dashboard
-        setActivePage={setActivePage} // ✅ Pass to Header for Profile button
+        onGoHome={() => navigate("/admin/dashboard")}
+        setActivePage={(page) => navigate(`/admin/${page}`)}
+        onLogout={onLogout}
       />
 
       <div className="flex flex-1 relative">
         {/* Sidebar */}
         <AdminSidebar
-          activeItem={activePage} // ✅ Dashboard text red when active
-          onItemClick={setActivePage}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
-          unreadCount={notifications.filter((n) => !n.read).length}
           mobileOpen={mobileOpen}
           setMobileOpen={setMobileOpen}
+          unreadCount={notifications.filter((n) => !n.read).length}
         />
 
         {/* Main content */}
@@ -133,10 +97,38 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          {renderContent()}
+          {/* Nested routes */}
+          <Routes>
+            <Route path="dashboard" element={<DashboardContent />} />
+            <Route path="settings" element={<AdminSetting />} />
+            <Route path="franchise" element={<FranchiseManagement />} />
+            <Route path="course" element={<CourseManagement />} />
+            <Route path="staff" element={<StaffManagement />} />
+            <Route path="student" element={<StudentManagement />} />
+            <Route path="payments" element={<PaymentBilling/>}/>
+            <Route path="batch" element={<BatchManagement />} />
+            <Route path="attendance" element={<AttendanceSystem />} />
+            <Route path="reports" element={<ReportAnalysis />} />
+            <Route path="events" element={<EventsWorkshop />} />
+            <Route path="feedback" element={<FeedbackPage />} />
+            <Route
+              path="notifications"
+              element={
+                <NotificationPage
+                  franchises={franchises}
+                  notifications={notifications}
+                  onMarkRead={handleMarkRead}
+                  onMarkAllRead={handleMarkAllRead}
+                />
+              }
+            />
+            <Route path="profile" element={<AdminProfile />} />
+            {/* Default redirect */}
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Routes>
         </main>
       </div>
-      </div>
-    
+    </div>
   );
 }
+    

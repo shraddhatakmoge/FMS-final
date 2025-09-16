@@ -33,7 +33,6 @@ def login_view(request):
             "admin": "/admin/dashboard",
             "franchise_head": "/franchise/dashboard",
             "staff": "/staff/dashboard",
-            "student": "/student/dashboard",
             }
         
         return JsonResponse({
