@@ -35,10 +35,10 @@ export default function FranchiseManagement({ setActivePage }) {
   const fetchFranchises = async () => {
     try {
       const res = await axios.get("http://127.0.0.1:8000/api/add-franchise/franchise/");
-      setFranchises(res.data.results || res.data || []); // ✅ handle both paginated and non-paginated
+      setFranchises(res.data.results || res.data || []); 
     } catch (err) {
       console.error("Fetch error:", err);
-      setFranchises([]); // fallback to empty array
+      setFranchises([]);
     }
   };
 
@@ -46,14 +46,14 @@ export default function FranchiseManagement({ setActivePage }) {
     fetchFranchises();
   }, []);
 
-  // Save franchise
+  // Save or Update franchise
   const handleSave = async () => {
     if (!name || !location || !startDate || !status) {
       alert("Please fill in all fields");
       return;
     }
 
-    const newFranchise = {
+    const franchiseData = {
       name,
       location,
       start_date: startDate,
@@ -61,11 +61,29 @@ export default function FranchiseManagement({ setActivePage }) {
     };
 
     try {
-      const res = await axios.post(
-        "http://127.0.0.1:8000/api/add-franchise/franchise/",
-        newFranchise
-      );
-      setFranchises([res.data, ...franchises]); // Update UI instantly
+      if (selectedFranchise) {
+        // 🔹 Update existing franchise (EDIT)
+        await axios.put(
+          `http://127.0.0.1:8000/api/add-franchise/franchise/${selectedFranchise.id}/`,
+          franchiseData
+        );
+
+        // Update UI instantly
+        setFranchises((prev) =>
+          prev.map((f) =>
+            f.id === selectedFranchise.id ? { ...f, ...franchiseData } : f
+          )
+        );
+      } else {
+        // 🔹 Create new franchise (ADD)
+        const res = await axios.post(
+          "http://127.0.0.1:8000/api/add-franchise/franchise/",
+          franchiseData
+        );
+        setFranchises([res.data, ...franchises]);
+      }
+
+      // Reset form + close modal
       setOpen(false);
       setName("");
       setLocation("");
@@ -73,7 +91,7 @@ export default function FranchiseManagement({ setActivePage }) {
       setStatus("");
       setSelectedFranchise(null);
     } catch (err) {
-      console.error("Save error:", err.response?.data || err.message);
+      console.error("Save/Update error:", err.response?.data || err.message);
     }
   };
 
@@ -181,7 +199,14 @@ export default function FranchiseManagement({ setActivePage }) {
         </select>
         <Button
           className="ml-auto bg-red-600 text-white"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setOpen(true);
+            setSelectedFranchise(null); // reset edit mode
+            setName("");
+            setLocation("");
+            setStartDate("");
+            setStatus("");
+          }}
         >
           + Add Franchise
         </Button>
@@ -223,10 +248,24 @@ export default function FranchiseManagement({ setActivePage }) {
                     </Button>
                     <Button
                       size="sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      onClick={() => {
+                        setSelectedFranchise(f);
+                        setName(f.name);
+                        setLocation(f.location);
+                        setStartDate(f.start_date);
+                        setStatus(f.status);
+                        setOpen(true); // open modal in edit mode
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
                       className={
                         f.status === "active"
-                          ? "bg-yellow-500 hover:bg-yellow-600 text-white"
-                          : "bg-green-500 hover:bg-green-600 text-white"
+                          ? "bg-green-500 hover:bg-green-600 text-white"
+                          : "bg-yellow-500 hover:bg-yellow-500 text-white"
                       }
                       onClick={() => handleToggleStatus(f)}
                     >
@@ -264,25 +303,19 @@ export default function FranchiseManagement({ setActivePage }) {
                 <div className="flex gap-3 mt-4">
                   <Button
                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() =>
-                      alert("Staff section for " + selectedFranchise.name)
-                    }
+                    onClick={() => setActivePage("staff")}
                   >
                     Staff
                   </Button>
                   <Button
                     className="bg-purple-600 hover:bg-purple-700 text-white"
-                    onClick={() =>
-                      alert("Student section for " + selectedFranchise.name)
-                    }
+                    onClick={() => setActivePage("student")}
                   >
                     Student
                   </Button>
                   <Button
                     className="bg-teal-600 hover:bg-teal-700 text-white"
-                    onClick={() =>
-                      alert("Batch section for " + selectedFranchise.name)
-                    }
+                    onClick={() => setActivePage("batch")}
                   >
                     Batch
                   </Button>
@@ -293,11 +326,13 @@ export default function FranchiseManagement({ setActivePage }) {
         </div>
       </div>
 
-      {/* Add Franchise Modal */}
+      {/* Add/Edit Franchise Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Franchise</DialogTitle>
+            <DialogTitle>
+              {selectedFranchise ? "Edit Franchise" : "Add Franchise"}
+            </DialogTitle>
           </DialogHeader>
 
           <form className="space-y-4">
@@ -347,7 +382,7 @@ export default function FranchiseManagement({ setActivePage }) {
               Cancel
             </Button>
             <Button className="bg-green-600 text-white" onClick={handleSave}>
-              Save
+              {selectedFranchise ? "Update" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
