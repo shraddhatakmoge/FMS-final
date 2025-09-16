@@ -27,6 +27,8 @@ export default function FranchiseManagement({ setActivePage }) {
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
   const [status, setStatus] = useState("");
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("")
 
   // Backend data
   const [franchises, setFranchises] = useState([]);
@@ -56,6 +58,8 @@ export default function FranchiseManagement({ setActivePage }) {
     const newFranchise = {
       name,
       location,
+      email,
+      password,
       start_date: startDate,
       status,
     };
@@ -198,6 +202,7 @@ export default function FranchiseManagement({ setActivePage }) {
                 <TableHead>Start Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Action</TableHead>
+
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -310,6 +315,28 @@ export default function FranchiseManagement({ setActivePage }) {
                 required
               />
             </div>
+            <div>
+  <Label>Email</Label>
+  <Input
+    type="email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}   // ✅ Correct
+    placeholder="Enter email"
+    required
+  />
+</div>
+
+<div>
+  <Label>Password</Label>
+  <Input
+    type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}   // ✅ Correct
+    placeholder="Enter password"
+    required
+  />
+</div>
+
             <div>
               <Label>Location</Label>
               <Input
