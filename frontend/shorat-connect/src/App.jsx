@@ -185,6 +185,7 @@ const App = () => {
                     user={user}
                     onLogout={handleLogout}
                     onGoBack={handleGoBack}
+                    email={user?.email} 
                   />
                 }
               />
