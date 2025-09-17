@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     "admin1.profiles",
     "corsheaders",
     'rest_framework_simplejwt.token_blacklist',  
- 
+    "admin1.add_staff",
 ]
 
 MIDDLEWARE = [

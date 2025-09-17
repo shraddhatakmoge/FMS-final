@@ -196,7 +196,7 @@ function EventsWorkshop() {
           </SelectContent>
         </Select>
         <Button
-          className="bg-green-500 w-full sm:w-auto"
+          className="bg-red-600 w-full sm:w-auto"
           onClick={() => {
             setShowForm(true);
             setEditIndex(null);

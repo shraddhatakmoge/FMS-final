@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState , useEffect} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,67 +9,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { Users, GraduationCap, Layers, Building2, Wallet, AlertCircle, Mail, Phone, UserPlus, ShieldCheck, Search } from "lucide-react";
-
+import axios from "axios";   
 // ---------------------------------------------
 // Mock data (swap with API calls later)
 // ---------------------------------------------
 const seedAttendance = (days = 30) => Array.from({ length: days }, (_, i) => ({ day: i + 1, present: Math.random() > 0.15 ? 1 : 0 }));
-
-const STUDENTS = [
-  {
-    id: "ST-2001",
-    name: "Aarav Sharma",
-    email: "aarav@shorat.com",
-    phone: "+91 98765 41001",
-    batch: "Batch A",
-    franchise: "Mumbai Central",
-    feesPaid: 20000,
-    feesPending: 5000,
-    attendance: seedAttendance(),
-    status: "Active",
-  },
-  {
-    id: "ST-2002",
-    name: "Priya Mehta",
-    email: "priya@shorat.com",
-    phone: "+91 98765 41002",
-    batch: "Batch B",
-    franchise: "Pune West",
-    feesPaid: 15000,
-    feesPending: 0,
-    attendance: seedAttendance(),
-    status: "Active",
-  },
-  {
-    id: "ST-2003",
-    name: "Rohan Singh",
-    email: "rohan@shorat.com",
-    phone: "+91 98765 41003",
-    batch: "Batch A",
-    franchise: "Mumbai Central",
-    feesPaid: 10000,
-    feesPending: 10000,
-    attendance: seedAttendance(),
-    status: "Inactive",
-  },
-  {
-    id: "ST-2004",
-    name: "Meera Joshi",
-    email: "meera@shorat.com",
-    phone: "+91 98765 41004",
-    batch: "Batch C",
-    franchise: "Delhi North",
-    feesPaid: 22000,
-    feesPending: 0,
-    attendance: seedAttendance(),
-    status: "Active",
-  },
-];
-
-// Utility helpers
 const pct = (num, den) => (den === 0 ? 0 : Math.round((num / den) * 100));
 const attendancePct = (days) => pct(days.reduce((a, d) => a + d.present, 0), days.length);
 const formatINR = (n) => `₹${Number(n || 0).toLocaleString()}`;
+
 
 // ---------------------------------------------
 // UI Elements
@@ -110,13 +58,9 @@ const AddStudentDialog = ({ onAdd, batches, franchises }) => {
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button className="bg-red-600 hover:bg-red-700 rounded-2xl"><UserPlus className="mr-2 h-4 w-4" />Add Student</Button>
-      </DialogTrigger>
+      
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Add New Student</DialogTitle>
-        </DialogHeader>
+       
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-4 items-center gap-2">
             <Label className="text-right">Name</Label>
@@ -193,14 +137,14 @@ const AddStudentDialog = ({ onAdd, batches, franchises }) => {
 // Main Dashboard
 // ---------------------------------------------
 export default function StudentManagement() {
-  const [rows, setRows] = useState(STUDENTS);
+  const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
   const [batch, setBatch] = useState("All");
   const [franchise, setFranchise] = useState("All");
   const [payment, setPayment] = useState("All"); // All | Paid | Pending
   const [status, setStatus] = useState("All"); // All | Active | Inactive
   const [active, setActive] = useState(rows[0]);
-
+  const [loading, setLoading] = useState(true);
   const batches = useMemo(() => Array.from(new Set(rows.map(r => r.batch))), [rows]);
   const franchises = useMemo(() => Array.from(new Set(rows.map(r => r.franchise))), [rows]);
 
@@ -211,6 +155,20 @@ export default function StudentManagement() {
     (payment === "All" || (payment === "Paid" ? r.feesPending === 0 : r.feesPending > 0)) &&
     (q === "" || r.name.toLowerCase().includes(q.toLowerCase()) || r.email.toLowerCase().includes(q.toLowerCase()))
   ));
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/students"); // 👈 change URL
+        setRows(res.data);  // assuming backend returns an array of students
+      } catch (err) {
+        console.error("Error fetching students:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, []);
 
   const totals = useMemo(() => {
     const total = rows.length;
@@ -243,16 +201,12 @@ export default function StudentManagement() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <header className="sticky top-0 z-10 border-b bg-white/70 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center gap-3 border-t border-l border-r border-gray-300">
-          <h1 className="text-3xl font-bold">Student Management</h1>
-          <div className="ml-auto flex items-center gap-2 w-full max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Search student by name or email" value={q} onChange={(e) => setQ(e.target.value)} className="rounded-2xl pl-8" />
-            </div>
-            <AddStudentDialog onAdd={(s) => { setRows(prev => [s, ...prev]); setActive(s); }} batches={batches.length ? batches : ["Batch A","Batch B"]} franchises={franchises.length ? franchises : ["Mumbai Central","Pune West"]} />
-          </div>
-        </div>
+        {/* ... unchanged header ... */}
+        <AddStudentDialog
+          // onAdd={handleAddStudent}   // 👈 use backend handler
+          batches={batches.length ? batches : ["Batch A","Batch B"]}
+          franchises={franchises.length ? franchises : ["Mumbai Central","Pune West"]}
+        />
       </header>
 
       <main className="mx-auto max-w-7xl p-4 grid gap-6 border-b border-l border-r border-gray-300">
