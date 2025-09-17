@@ -74,6 +74,8 @@ function FranchiseManagement({ setActivePage }) {
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
   const [status, setStatus] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Backend data
   const [franchises, setFranchises] = useState([]);
@@ -97,7 +99,7 @@ function FranchiseManagement({ setActivePage }) {
 
   // Save or Update franchise
   const handleSave = async () => {
-    if (!name || !location || !startDate || !status) {
+    if (!name || !location || !startDate || !status || !email || !password) {
       alert("Please fill in all fields");
       return;
     }
@@ -105,42 +107,41 @@ function FranchiseManagement({ setActivePage }) {
     const franchiseData = {
       name,
       location,
+      email,
+      password,
       start_date: startDate,
       status,
     };
 
     try {
-      if (selectedFranchise) {
-        // Update existing franchise
-        await axios.put(
-          `http://127.0.0.1:8000/api/add-franchise/franchise/${selectedFranchise.id}/`,
-          franchiseData
-        );
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/add-franchise/franchise/",
+        newFranchise
+      );
 
-        setFranchises((prev) =>
-          prev.map((f) =>
-            f.id === selectedFranchise.id ? { ...f, ...franchiseData } : f
-          )
-        );
-      } else {
-        // Create new franchise
-        const res = await axios.post(
-          "http://127.0.0.1:8000/api/add-franchise/franchise/",
-          franchiseData
-        );
-        setFranchises([res.data, ...franchises]);
-      }
+      // ✅ Update list instantly
+      setFranchises([res.data, ...franchises]);
 
-      // Reset form
-      setOpen(false);
+      // ✅ Reset form
       setName("");
       setLocation("");
+      setEmail("");
+      setPassword("");
       setStartDate("");
       setStatus("");
+
+      // ✅ Close dialog
+      setOpen(false);
+
+      // ✅ Clear selected franchise
       setSelectedFranchise(null);
     } catch (err) {
-      console.error("Save/Update error:", err.response?.data || err.message);
-    }
+  console.error("❌ Save error:", err.response?.data || err.message);
+  const errorMsg = err.response?.data?.email 
+    || err.response?.data?.detail 
+    || "Save failed. Try again.";
+  alert(errorMsg);  // <-- show error to user
+}
   };
 
   // Delete Franchise
@@ -402,13 +403,39 @@ function FranchiseManagement({ setActivePage }) {
             </DialogTitle>
           </DialogHeader>
 
-          <form className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+          >
             <div>
               <Label>Franchise Name</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter name"
+                required
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email"
+                required
+              />
+            </div>
+            <div>
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
                 required
               />
             </div>
@@ -442,18 +469,18 @@ function FranchiseManagement({ setActivePage }) {
                 </SelectContent>
               </Select>
             </div>
-          </form>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="bg-green-600 text-white" onClick={handleSave}>
-              {selectedFranchise ? "Update" : "Save"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-green-600 text-white">
+                Save
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
   );
-}
+} 

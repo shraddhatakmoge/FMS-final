@@ -9,7 +9,8 @@ export default function Header({
   onToggleSidebar,
   onGoHome,      // function to go to dashboard
   setActivePage, // 👈 pass from AdminLayout
-  onLogout,      // 👈 NEW: comes from App.jsx
+  onLogout,   
+  email_user   // 👈 NEW: comes from App.jsx
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -84,8 +85,9 @@ export default function Header({
             <div className="absolute right-0 mt-2 w-40 bg-white border rounded-md shadow-lg py-1 z-50">
               <button
                 onClick={() => {
-                  setActivePage("profile"); // 👈 switch to profile page
+                  setActivePage("profile",{ email: email_user }); // 👈 switch to profile page
                   setDropdownOpen(false);
+                  email
                 }}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
               >

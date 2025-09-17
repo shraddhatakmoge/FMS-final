@@ -74,19 +74,19 @@ export const AdminSidebar = ({
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={cn(
-          "hidden md:block bg-card border-r border-border h-full transition-all duration-300 shadow-soft",
-          collapsed ? "w-16" : "w-64"
-        )}
-      >
-        <div className="p-4">
-          <div className="space-y-1">
-            {menuItems.map((item, i) => (
-              <MenuItem key={i} item={item} />
-            ))}
-          </div>
-        </div>
-      </aside>
+  className={cn(
+    "hidden md:block fixed top-16 left-0 bg-card border-r border-border h-[calc(100%-4rem)] transition-all duration-300 shadow-soft",
+    collapsed ? "w-16" : "w-64"
+  )}
+>
+  <div className="p-4">
+    <div className="space-y-1">
+      {menuItems.map((item, i) => (
+        <MenuItem key={i} item={item} />
+      ))}
+    </div>
+  </div>
+</aside>
 
       {/* Mobile Sidebar */}
       <div

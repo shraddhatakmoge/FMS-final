@@ -1,7 +1,7 @@
 // src/components/Admin/AdminProfile.jsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function AdminProfile() {
+export default function AdminProfile({email_user}) {
   return (
     <div className="p-6 flex justify-center">
       <Card className="w-full max-w-2xl shadow-lg rounded-2xl border border-gray-200">
@@ -17,7 +17,7 @@ export default function AdminProfile() {
               <h2 className="text-xl font-semibold text-gray-900">
                 Admin User
               </h2>
-              <p className="text-gray-500 text-sm">admin@shorat.com</p>
+              <p className="text-gray-500 text-sm">{email_user}</p>
             </div>
           </div>
 
