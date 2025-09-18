@@ -2,22 +2,69 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 
-export default function FranchiseManagement({ setActivePage }) {
+// Import your other management components
+import StaffManagement from "../staff/staffmanagement";
+import StudentManagement from "../student/studentmanagement";
+import BatchManagement from "../Batches/BatchManagement";
+
+export default function FranchiseManagementWrapper() {
+  // Handle navigation
+  const [activePage, setActivePage] = useState({
+    page: "franchise", // default page
+    franchise: null,
+  });
+
+  return (
+    <>
+      {activePage.page === "franchise" && (
+        <FranchiseManagement setActivePage={setActivePage} />
+      )}
+      {activePage.page === "staff" && (
+        <StaffManagement franchise={activePage.franchise} />
+      )}
+      {activePage.page === "student" && (
+        <StudentManagement franchise={activePage.franchise} />
+      )}
+      {activePage.page === "batch" && (
+        <BatchManagement franchise={activePage.franchise} />
+      )}
+    </>
+  );
+}
+
+function FranchiseManagement({ setActivePage }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedFranchise, setSelectedFranchise] = useState(null);
@@ -37,11 +84,13 @@ export default function FranchiseManagement({ setActivePage }) {
   // Fetch franchises from API
   const fetchFranchises = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/add-franchise/franchise/");
-      setFranchises(res.data.results || res.data || []); // ✅ handle both paginated and non-paginated
+      const res = await axios.get(
+        "http://127.0.0.1:8000/api/add-franchise/franchise/"
+      );
+      setFranchises(res.data.results || res.data || []);
     } catch (err) {
       console.error("Fetch error:", err);
-      setFranchises([]); // fallback to empty array
+      setFranchises([]);
     }
   };
 
@@ -49,14 +98,14 @@ export default function FranchiseManagement({ setActivePage }) {
     fetchFranchises();
   }, []);
 
-  // Save franchise
+  // Save or Update franchise
   const handleSave = async () => {
     if (!name || !location || !startDate || !status || !email || !password) {
       alert("Please fill in all fields");
       return;
     }
 
-    const newFranchise = {
+    const franchiseData = {
       name,
       location,
       email,
@@ -100,8 +149,10 @@ export default function FranchiseManagement({ setActivePage }) {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this franchise?")) {
       try {
-        await axios.delete(`http://127.0.0.1:8000/api/add-franchise/franchise/${id}/`);
-        fetchFranchises();
+        await axios.delete(
+          `http://127.0.0.1:8000/api/add-franchise/franchise/${id}/`
+        );
+        setFranchises((prev) => prev.filter((f) => f.id !== id));
         if (selectedFranchise?.id === id) {
           setSelectedFranchise(null);
         }
@@ -113,24 +164,27 @@ export default function FranchiseManagement({ setActivePage }) {
 
   // Toggle Active/Inactive
   const handleToggleStatus = async (franchise) => {
-    const updatedStatus = franchise.status === "active" ? "inactive" : "active";
+    const updatedStatus =
+      franchise.status === "active" ? "inactive" : "active";
     try {
       await axios.patch(
         `http://127.0.0.1:8000/api/add-franchise/franchise/${franchise.id}/`,
         { status: updatedStatus }
       );
-      fetchFranchises();
+      setFranchises((prev) =>
+        prev.map((f) =>
+          f.id === franchise.id ? { ...f, status: updatedStatus } : f
+        )
+      );
       if (selectedFranchise?.id === franchise.id) {
-        setSelectedFranchise({
-          ...franchise,
-          status: updatedStatus,
-        });
+        setSelectedFranchise({ ...franchise, status: updatedStatus });
       }
     } catch (err) {
       console.error("Status toggle error:", err);
     }
   };
 
+  // Apply search + filter
   const filteredFranchises = franchises.filter((f) => {
     const matchesSearch =
       f.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -199,14 +253,21 @@ export default function FranchiseManagement({ setActivePage }) {
           <option value="inactive">Inactive</option>
         </select>
         <Button
-          className="ml-auto bg-red-600 text-white"
-          onClick={() => setOpen(true)}
+          className="ml-auto bg-red-600 text-white hover:bg-red-500"
+          onClick={() => {
+            setOpen(true);
+            setSelectedFranchise(null);
+            setName("");
+            setLocation("");
+            setStartDate("");
+            setStatus("");
+          }}
         >
           + Add Franchise
         </Button>
       </div>
 
-      {/* Table */}
+      {/* Table + Side View */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Table>
@@ -242,10 +303,24 @@ export default function FranchiseManagement({ setActivePage }) {
                     </Button>
                     <Button
                       size="sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      onClick={() => {
+                        setSelectedFranchise(f);
+                        setName(f.name);
+                        setLocation(f.location);
+                        setStartDate(f.start_date);
+                        setStatus(f.status);
+                        setOpen(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
                       className={
                         f.status === "active"
-                          ? "bg-yellow-500 hover:bg-yellow-600 text-white"
-                          : "bg-green-500 hover:bg-green-600 text-white"
+                          ? "bg-green-600 hover:bg-green-500 text-white"
+                          : "bg-yellow-600 hover:bg-yellow-500 text-white"
                       }
                       onClick={() => handleToggleStatus(f)}
                     >
@@ -253,7 +328,7 @@ export default function FranchiseManagement({ setActivePage }) {
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-red-500 hover:bg-red-600 text-white"
+                      className="bg-red-600 hover:bg-red-500 text-white"
                       onClick={() => handleDelete(f.id)}
                     >
                       Delete
@@ -279,12 +354,14 @@ export default function FranchiseManagement({ setActivePage }) {
                 <p>Start Date: {selectedFranchise.start_date}</p>
                 <p>Status: {selectedFranchise.status}</p>
 
-                {/* Action Buttons */}
                 <div className="flex gap-3 mt-4">
                   <Button
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() =>
-                      alert("Staff section for " + selectedFranchise.name)
+                      setActivePage({
+                        page: "staff",
+                        franchise: selectedFranchise,
+                      })
                     }
                   >
                     Staff
@@ -292,7 +369,10 @@ export default function FranchiseManagement({ setActivePage }) {
                   <Button
                     className="bg-purple-600 hover:bg-purple-700 text-white"
                     onClick={() =>
-                      alert("Student section for " + selectedFranchise.name)
+                      setActivePage({
+                        page: "student",
+                        franchise: selectedFranchise,
+                      })
                     }
                   >
                     Student
@@ -300,7 +380,10 @@ export default function FranchiseManagement({ setActivePage }) {
                   <Button
                     className="bg-teal-600 hover:bg-teal-700 text-white"
                     onClick={() =>
-                      alert("Batch section for " + selectedFranchise.name)
+                      setActivePage({
+                        page: "batch",
+                        franchise: selectedFranchise,
+                      })
                     }
                   >
                     Batch
@@ -312,11 +395,13 @@ export default function FranchiseManagement({ setActivePage }) {
         </div>
       </div>
 
-      {/* Add Franchise Modal */}
+      {/* Add/Edit Franchise Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Franchise</DialogTitle>
+            <DialogTitle>
+              {selectedFranchise ? "Edit Franchise" : "Add Franchise"}
+            </DialogTitle>
           </DialogHeader>
 
           <form
