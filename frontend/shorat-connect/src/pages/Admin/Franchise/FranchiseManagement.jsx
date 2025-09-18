@@ -15,18 +15,19 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 export default function FranchiseManagement({ setActivePage }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedFranchise, setSelectedFranchise] = useState(null);
   const [open, setOpen] = useState(false);
-
-  // Form State
-  const [name, setName] = useState("");
+  const navigate = useNavigate()
+  // Form State  const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
   const [status, setStatus] = useState("");
+    const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 

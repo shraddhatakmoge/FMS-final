@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import { AdminSidebar } from "../Layout/AdminSidebar";
-import { cn } from "@/lib/utils";
-
 import { DashboardContent } from "../Dashboard/DashboardContent";
 import FranchiseManagement from "../Franchise/FranchiseManagement";
 import StaffManagement from "../../Franchise/staff/staffmanagement";
@@ -19,13 +17,8 @@ import AdminProfile from "../Profile/AdminProfile";
 import AdminSetting from "../Setting/AdminSetting";
 import PaymentBilling from "../Payment&Billing/PaymentBilling";
 
-import { Menu, X } from "lucide-react";
-
-export default function AdminLayout({ onLogout , user}) {
+export default function AdminLayout({ onLogout, user }) {
   const navigate = useNavigate();
-
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Dummy data
   const [franchises] = useState([
@@ -57,54 +50,22 @@ export default function AdminLayout({ onLogout , user}) {
           onNotificationsClick={() => navigate("/admin/notifications")}
           unreadCount={notifications.filter((n) => !n.read).length}
           onGoHome={() => navigate("/admin/dashboard")}
-          setActivePage={(page) => navigate(`/admin/${page}`)}
           onLogout={onLogout}
-          email_user={user?.email}  
+          setActivePage={(page, state) => navigate(`/admin/${page}`, { state })}
+          email_user={user?.email}
         />
       </header>
 
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative mt-16">
         {/* Sidebar */}
-        <AdminSidebar
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          mobileOpen={mobileOpen}
-          setMobileOpen={setMobileOpen}
-          unreadCount={notifications.filter((n) => !n.read).length}
-        />
+        <div className="w-64 bg-white border-r border-border h-full fixed lg:static z-40">
+          <AdminSidebar
+            unreadCount={notifications.filter((n) => !n.read).length}
+          />
+        </div>
 
         {/* Main content */}
-        <main
-          className={cn(
-            "flex-1 p-6 overflow-y-auto transition-all duration-300 mt-16", // mt-16 pushes content below header
-            collapsed ? "ml-30" : "ml-64"
-          )}
-        >
-          {/* Floating Hamburger / X button */}
-          <div className="mb-4">
-            <button
-              className="bg-white p-2 rounded-full hover:bg-gray-100"
-              onClick={() =>
-                window.innerWidth < 1024
-                  ? setMobileOpen((prev) => !prev)
-                  : setCollapsed((prev) => !prev)
-              }
-            >
-              {window.innerWidth < 1024 ? (
-                mobileOpen ? (
-                  <X className="h-6 w-6 text-gray-700" />
-                ) : (
-                  <Menu className="h-6 w-6 text-gray-700" />
-                )
-              ) : collapsed ? (
-                <X className="h-6 w-6 text-gray-700" />
-              ) : (
-                <Menu className="h-6 w-6 text-gray-700" />
-              )}
-            </button>
-          </div>
-
-          {/* Nested routes */}
+        <main className="flex-1 p-6 overflow-y-auto ">
           <Routes>
             <Route path="dashboard" element={<DashboardContent />} />
             <Route path="settings" element={<AdminSetting />} />
