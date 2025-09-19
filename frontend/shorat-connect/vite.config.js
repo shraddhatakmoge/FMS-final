@@ -6,25 +6,25 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "src"), // @ points to src folder
     },
   },
   server: {
     host: "localhost",
     port: 5173,
     open: false,
-   fs: {
-    strict: true,
-  },
+    fs: {
+      strict: false, // Allows importing files outside project root if needed
+    },
   },
   preview: {
     port: 5173,
   },
   base: "/",
   optimizeDeps: {
-    include: [],
+    include: [], // Add dependencies here if needed for faster dev
   },
   build: {
-    outDir: "dist",
+    outDir: "dist", // Output folder for production build
   },
 });

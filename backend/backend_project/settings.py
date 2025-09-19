@@ -30,6 +30,9 @@ INSTALLED_APPS = [
     "admin1.add_event",
     "admin1.add_franchise",  
     "admin1.profiles",
+    "admin1.add_course",
+    "notifications",
+    'Franchise.add_batch',
     "corsheaders",
     'rest_framework_simplejwt.token_blacklist',  
  
@@ -128,11 +131,16 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 from datetime import timedelta
 
+# settings.py
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # ✅ JWT
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
+
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -144,7 +152,10 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    # Add any other frontend origins here
+]
 
 
 

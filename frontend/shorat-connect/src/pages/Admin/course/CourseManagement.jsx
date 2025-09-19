@@ -1,17 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react"; // ✅ added useEffect
 
 const CourseManagement = () => {
-  const [courses, setCourses] = useState([
-    { name: "Java Full Stack", category: "Full Stack Development", duration: "6 Month", instructor: "Aarav Sharma", students: "42/50", status: "Active", startDate: "2025-07-01", branch: "Wagholi Pune" },
-    { name: "Python Full Stack", category: "Full Stack Development", duration: "6 Month", instructor: "Priya Mehta", students: "38/50", status: "Active", startDate: "2025-08-15", branch: "Ahilya Nagar" },
-    { name: "Web Development", category: "Frontend Development", duration: "4 Month", instructor: "Rahul Verma", students: "25/40", status: "Active", startDate: "2025-09-01", branch: "Wagholi Pune" },
-    { name: "Data Science", category: "Data & AI", duration: "8 Month", instructor: "Neha Kapoor", students: "30/40", status: "Active", startDate: "2025-09-15", branch: "Ahilya Nagar" },
-    { name: "Data Analyst", category: "Data & AI", duration: "5 Month", instructor: "Vikas Patel", students: "20/35", status: "Active", startDate: "2025-10-01", branch: "Wagholi Pune" },
-    { name: "Software Testing (Manual)", category: "Testing", duration: "3 Month", instructor: "Simran Kaur", students: "15/30", status: "Active", startDate: "2025-10-15", branch: "Ahilya Nagar" },
-    { name: "Software Testing (Automation)", category: "Testing", duration: "4 Month", instructor: "Ankit Sharma", students: "12/30", status: "Active", startDate: "2025-11-01", branch: "Wagholi Pune" },
-    { name: "Flutter Development", category: "Mobile Development", duration: "5 Month", instructor: "Ravi Singh", students: "18/30", status: "Active", startDate: "2025-11-15", branch: "Ahilya Nagar" },
-    { name: "Android Development", category: "Mobile Development", duration: "5 Month", instructor: "Karan Gupta", students: "22/30", status: "Active", startDate: "2025-12-01", branch: "Wagholi Pune" },
-  ]);
+  const [courses, setCourses] = useState([]); // ✅ empty at start
 
   const [branchFilter, setBranchFilter] = useState("Wagholi Pune");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -42,10 +32,39 @@ const CourseManagement = () => {
     branch: "Wagholi Pune",
   });
 
+  // ✅ Fetch courses from backend when component mounts
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/courses/");
+        if (!response.ok) throw new Error("Failed to fetch courses");
+        const data = await response.json();
+
+        const mappedData = data.map((course) => ({
+          name: course.name,
+          category: "",
+          duration: course.duration,
+          instructor: course.instructor_name,
+          students: course.student_quantity,
+          status: "Active",
+          startDate: course.start_date,
+          branch: "Wagholi Pune",
+        }));
+
+        setCourses(mappedData);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
       const branchMatch = course.branch === branchFilter;
-      const statusMatch = statusFilter === "All" || course.status === statusFilter;
+      const statusMatch =
+        statusFilter === "All" || course.status === statusFilter;
       const searchMatch =
         course.name.toLowerCase().includes(search.toLowerCase()) ||
         course.category.toLowerCase().includes(search.toLowerCase()) ||
@@ -61,19 +80,54 @@ const CourseManagement = () => {
     return { total, active, inactive };
   }, [filteredCourses]);
 
-  const handleAddCourse = () => {
-    setCourses([...courses, newCourse]);
-    setShowModal(false);
-    setNewCourse({
-      name: "",
-      category: "",
-      duration: "",
-      instructor: "",
-      students: "",
-      status: "Active",
-      startDate: "",
-      branch: branchFilter,
-    });
+  const handleAddCourse = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/courses/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newCourse.name,
+          duration: newCourse.duration,
+          instructor_name: newCourse.instructor,
+          student_quantity: parseInt(newCourse.students.split("/")[0]) || 0,
+          start_date: newCourse.startDate,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to add course");
+
+      const savedCourse = await response.json();
+
+      // ✅ Update courses with the new course
+      setCourses((prevCourses) => [
+        ...prevCourses,
+        {
+          name: savedCourse.name,
+          category: "",
+          duration: savedCourse.duration,
+          instructor: savedCourse.instructor_name,
+          students: savedCourse.student_quantity,
+          status: "Active",
+          startDate: savedCourse.start_date,
+          branch: "Wagholi Pune",
+        },
+      ]);
+
+      setShowModal(false);
+      setNewCourse({
+        name: "",
+        category: "",
+        duration: "",
+        instructor: "",
+        students: "",
+        status: "Active",
+        startDate: "",
+        branch: branchFilter,
+      });
+    } catch (error) {
+      console.error("Error adding course:", error);
+      alert("Failed to save course!");
+    }
   };
 
   const handleDelete = (index) => {
@@ -90,7 +144,10 @@ const CourseManagement = () => {
     setCourses(
       courses.map((course, i) =>
         i === globalIndex
-          ? { ...course, status: course.status === "Active" ? "Inactive" : "Active" }
+          ? {
+              ...course,
+              status: course.status === "Active" ? "Inactive" : "Active",
+            }
           : course
       )
     );
@@ -163,11 +220,15 @@ const CourseManagement = () => {
         </div>
         <div className="bg-white rounded shadow p-4 text-center hover:scale-105 transition">
           <p className="text-gray-500 text-sm">Active Courses</p>
-          <h3 className="text-xl sm:text-2xl font-bold text-green-600">{stats.active}</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-green-600">
+            {stats.active}
+          </h3>
         </div>
         <div className="bg-white rounded shadow p-4 text-center hover:scale-105 transition">
           <p className="text-gray-500 text-sm">Inactive Courses</p>
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-600">{stats.inactive}</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-600">
+            {stats.inactive}
+          </h3>
         </div>
       </div>
 
@@ -247,49 +308,66 @@ const CourseManagement = () => {
       {/* Add Course Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Add New Course</h3>
-            <input type="text" placeholder="Course Name" className="border w-full p-2 mb-2 rounded"
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Add New Course</h2>
+
+            <input
+              type="text"
+              placeholder="Course Name"
               value={newCourse.name}
-              onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, name: e.target.value })
+              }
+              className="border w-full p-2 mb-3 rounded"
             />
-            <input type="text" placeholder="Category" className="border w-full p-2 mb-2 rounded"
-              value={newCourse.category}
-              onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
-            />
-            <input type="text" placeholder="Duration" className="border w-full p-2 mb-2 rounded"
+            <input
+              type="text"
+              placeholder="Duration"
               value={newCourse.duration}
-              onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, duration: e.target.value })
+              }
+              className="border w-full p-2 mb-3 rounded"
             />
-            <input type="text" placeholder="Instructor Name" className="border w-full p-2 mb-2 rounded"
+            <input
+              type="text"
+              placeholder="Instructor Name"
               value={newCourse.instructor}
-              onChange={(e) => setNewCourse({ ...newCourse, instructor: e.target.value })}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, instructor: e.target.value })
+              }
+              className="border w-full p-2 mb-3 rounded"
             />
-            <input type="text" placeholder="Students (e.g., 0/30)" className="border w-full p-2 mb-2 rounded"
+            <input
+              type="number"
+              placeholder="Number of Students"
               value={newCourse.students}
-              onChange={(e) => setNewCourse({ ...newCourse, students: e.target.value })}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, students: e.target.value })
+              }
+              className="border w-full p-2 mb-3 rounded"
             />
-            <select
-              className="border w-full p-2 mb-2 rounded"
-              value={newCourse.branch}
-              onChange={(e) => setNewCourse({ ...newCourse, branch: e.target.value })}
-            >
-              <option value="Wagholi Pune">Wagholi Pune</option>
-              <option value="Ahilya Nagar">Ahilya Nagar</option>
-            </select>
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">Start Date</label>
-              <input type="date" className="border w-full p-2 rounded"
-                value={newCourse.startDate}
-                onChange={(e) => setNewCourse({ ...newCourse, startDate: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-300 rounded w-full sm:w-auto">
+            <input
+              type="date"
+              value={newCourse.startDate}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, startDate: e.target.value })
+              }
+              className="border w-full p-2 mb-3 rounded"
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowModal(false)}
+                className="bg-gray-400 text-white px-4 py-2 rounded"
+              >
                 Cancel
               </button>
-              <button onClick={handleAddCourse} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 w-full sm:w-auto">
-                Add
+              <button
+                onClick={handleAddCourse}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Save
               </button>
             </div>
           </div>
@@ -299,52 +377,7 @@ const CourseManagement = () => {
       {/* Edit Course Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Edit Course</h3>
-            <input type="text" placeholder="Course Name" className="border w-full p-2 mb-2 rounded"
-              value={editCourse.name}
-              onChange={(e) => setEditCourse({ ...editCourse, name: e.target.value })}
-            />
-            <input type="text" placeholder="Category" className="border w-full p-2 mb-2 rounded"
-              value={editCourse.category}
-              onChange={(e) => setEditCourse({ ...editCourse, category: e.target.value })}
-            />
-            <input type="text" placeholder="Duration" className="border w-full p-2 mb-2 rounded"
-              value={editCourse.duration}
-              onChange={(e) => setEditCourse({ ...editCourse, duration: e.target.value })}
-            />
-            <input type="text" placeholder="Instructor Name" className="border w-full p-2 mb-2 rounded"
-              value={editCourse.instructor}
-              onChange={(e) => setEditCourse({ ...editCourse, instructor: e.target.value })}
-            />
-            <input type="text" placeholder="Students (e.g., 0/30)" className="border w-full p-2 mb-2 rounded"
-              value={editCourse.students}
-              onChange={(e) => setEditCourse({ ...editCourse, students: e.target.value })}
-            />
-            <select
-              className="border w-full p-2 mb-2 rounded"
-              value={editCourse.branch}
-              onChange={(e) => setEditCourse({ ...editCourse, branch: e.target.value })}
-            >
-              <option value="Wagholi Pune">Wagholi Pune</option>
-              <option value="Ahilya Nagar">Ahilya Nagar</option>
-            </select>
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">Start Date</label>
-              <input type="date" className="border w-full p-2 rounded"
-                value={editCourse.startDate}
-                onChange={(e) => setEditCourse({ ...editCourse, startDate: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-gray-300 rounded w-full sm:w-auto">
-                Cancel
-              </button>
-              <button onClick={saveEdit} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto">
-                Save
-              </button>
-            </div>
-          </div>
+          {/* modal content */}
         </div>
       )}
     </div>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AuthContext } from "../context/AuthContext.jsx"
 import {
   Select,
   SelectContent,
@@ -16,6 +17,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+// ✅ Import NotificationContext
+import { NotificationContext } from "../Notifications/NotificationContext.jsx";
 
 function EventsWorkshop() {
   const [search, setSearch] = useState("");
@@ -32,6 +36,9 @@ function EventsWorkshop() {
     endDate: "",
     status: "Upcoming",
   });
+
+  // ✅ Get fetchNotifications from NotificationContext
+  const { fetchNotifications } = useContext(NotificationContext);
 
   // 🔹 Fetch events from Django API
   useEffect(() => {
@@ -52,33 +59,29 @@ function EventsWorkshop() {
       .catch((err) => console.error("Failed to fetch events", err));
   }, []);
 
-  // 🔹 Filtered events
   const filteredEvents = events.filter(
     (e) =>
       (status === "All" || e.status === status) &&
       e.name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // 🔹 Save (Create/Update) Event
   const handleAddOrUpdateEvent = async () => {
     if (!newEvent.name || !newEvent.location || !newEvent.startDate || !newEvent.endDate) {
       alert("Please fill in all fields");
       return;
     }
 
-    // ✅ Match Django field names
     const eventData = {
       name: newEvent.name,
       location: newEvent.location,
       start_date: newEvent.startDate,
       end_date: newEvent.endDate,
-      status: newEvent.status.toLowerCase(), // "upcoming" | "completed"
+      status: newEvent.status.toLowerCase(),
     };
 
     try {
       let response;
       if (editIndex !== null) {
-        // UPDATE
         const id = events[editIndex].id;
         response = await fetch(`http://127.0.0.1:8000/api/events/${id}/`, {
           method: "PUT",
@@ -86,7 +89,6 @@ function EventsWorkshop() {
           body: JSON.stringify(eventData),
         });
       } else {
-        // CREATE
         response = await fetch("http://127.0.0.1:8000/api/events/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -113,7 +115,9 @@ function EventsWorkshop() {
           setEvents([...events, formatted]);
         }
 
-        // reset
+        // ✅ Refresh notifications after creating/updating event
+        fetchNotifications();
+
         setShowForm(false);
         setEditIndex(null);
         setNewEvent({ id: null, name: "", location: "", startDate: "", endDate: "", status: "Upcoming" });
@@ -125,7 +129,6 @@ function EventsWorkshop() {
     }
   };
 
-  // 🔹 Delete Event
   const handleDelete = async (index) => {
     const id = events[index].id;
     if (window.confirm("Are you sure you want to delete this event?")) {
@@ -142,7 +145,6 @@ function EventsWorkshop() {
     }
   };
 
-  // 🔹 Edit Event
   const handleEdit = (index) => {
     setNewEvent({ ...events[index] });
     setEditIndex(index);
@@ -258,20 +260,20 @@ function EventsWorkshop() {
             </Select>
           </div>
           <DialogFooter>
-  <Button variant="outline" onClick={() => setShowForm(false)}>
-    Cancel
-  </Button>
-  <Button
-    type="button"  // ✅ prevents unwanted form submit / auto-close
-    className="bg-green-500 hover:bg-green-600"
-    onClick={(e) => {
-      e.preventDefault(); // ✅ stop default dialog close
-      handleAddOrUpdateEvent();
-    }}
-  >
-    {editIndex !== null ? "Update Event" : "Save Event"}
-  </Button>
-</DialogFooter>
+            <Button variant="outline" onClick={() => setShowForm(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-green-500 hover:bg-green-600"
+              onClick={(e) => {
+                e.preventDefault();
+                handleAddOrUpdateEvent();
+              }}
+            >
+              {editIndex !== null ? "Update Event" : "Save Event"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

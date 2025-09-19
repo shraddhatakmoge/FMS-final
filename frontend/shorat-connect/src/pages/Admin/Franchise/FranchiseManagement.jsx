@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,8 +15,11 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { NotificationContext } from "../Notifications/NotificationContext"; // ✅ Optional if you want to update notifications
 
 export default function FranchiseManagement({ setActivePage }) {
+  const { fetchNotifications } = useContext(NotificationContext); // ✅ refresh notifications
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedFranchise, setSelectedFranchise] = useState(null);
@@ -27,8 +30,8 @@ export default function FranchiseManagement({ setActivePage }) {
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
   const [status, setStatus] = useState("");
-  const [email,setEmail] = useState("");
-  const [password,setPassword] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Backend data
   const [franchises, setFranchises] = useState([]);
@@ -37,10 +40,10 @@ export default function FranchiseManagement({ setActivePage }) {
   const fetchFranchises = async () => {
     try {
       const res = await axios.get("http://127.0.0.1:8000/api/add-franchise/franchise/");
-      setFranchises(res.data.results || res.data || []); // ✅ handle both paginated and non-paginated
+      setFranchises(res.data.results || res.data || []);
     } catch (err) {
       console.error("Fetch error:", err);
-      setFranchises([]); // fallback to empty array
+      setFranchises([]);
     }
   };
 
@@ -50,7 +53,7 @@ export default function FranchiseManagement({ setActivePage }) {
 
   // Save franchise
   const handleSave = async () => {
-    if (!name || !location || !startDate || !status) {
+    if (!name || !location || !startDate || !status || !email || !password) {
       alert("Please fill in all fields");
       return;
     }
@@ -69,13 +72,13 @@ export default function FranchiseManagement({ setActivePage }) {
         "http://127.0.0.1:8000/api/add-franchise/franchise/",
         newFranchise
       );
-      setFranchises([res.data, ...franchises]); // Update UI instantly
+      setFranchises([res.data, ...franchises]); // Instant UI update
       setOpen(false);
-      setName("");
-      setLocation("");
-      setStartDate("");
-      setStatus("");
+      setName(""); setLocation(""); setStartDate(""); setStatus(""); setEmail(""); setPassword("");
       setSelectedFranchise(null);
+
+      // ✅ Refresh notifications after adding
+      fetchNotifications?.();
     } catch (err) {
       console.error("Save error:", err.response?.data || err.message);
     }
@@ -87,9 +90,10 @@ export default function FranchiseManagement({ setActivePage }) {
       try {
         await axios.delete(`http://127.0.0.1:8000/api/add-franchise/franchise/${id}/`);
         fetchFranchises();
-        if (selectedFranchise?.id === id) {
-          setSelectedFranchise(null);
-        }
+        if (selectedFranchise?.id === id) setSelectedFranchise(null);
+
+        // ✅ Refresh notifications after delete
+        fetchNotifications?.();
       } catch (err) {
         console.error("Delete error:", err);
       }
@@ -106,11 +110,11 @@ export default function FranchiseManagement({ setActivePage }) {
       );
       fetchFranchises();
       if (selectedFranchise?.id === franchise.id) {
-        setSelectedFranchise({
-          ...franchise,
-          status: updatedStatus,
-        });
+        setSelectedFranchise({ ...franchise, status: updatedStatus });
       }
+
+      // ✅ Refresh notifications after status change
+      fetchNotifications?.();
     } catch (err) {
       console.error("Status toggle error:", err);
     }
@@ -202,7 +206,6 @@ export default function FranchiseManagement({ setActivePage }) {
                 <TableHead>Start Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Action</TableHead>
-
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -316,27 +319,25 @@ export default function FranchiseManagement({ setActivePage }) {
               />
             </div>
             <div>
-  <Label>Email</Label>
-  <Input
-    type="email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}   // ✅ Correct
-    placeholder="Enter email"
-    required
-  />
-</div>
-
-<div>
-  <Label>Password</Label>
-  <Input
-    type="password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}   // ✅ Correct
-    placeholder="Enter password"
-    required
-  />
-</div>
-
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email"
+                required
+              />
+            </div>
+            <div>
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                required
+              />
+            </div>
             <div>
               <Label>Location</Label>
               <Input

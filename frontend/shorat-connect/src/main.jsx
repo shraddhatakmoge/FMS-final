@@ -1,18 +1,24 @@
+// src/main.jsx
+
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
+import { AuthProvider } from './pages/Admin/context/AuthContext.jsx';
+import { NotificationProvider } from './pages/Admin/Notifications/NotificationContext.jsx';
 
 const rootElement = document.getElementById("root");
 
 if (rootElement) {
   createRoot(rootElement).render(
-    <BrowserRouter>
-    <AuthProvider>
+    // src/main.jsx
+<BrowserRouter>
+  <AuthProvider> {/* The parent provider */}
+    <NotificationProvider> {/* The child provider */}
       <App />
-    </AuthProvider>
-    </BrowserRouter>
+    </NotificationProvider>
+  </AuthProvider>
+</BrowserRouter>
   );
 } else {
   console.error("❌ Root element not found!");

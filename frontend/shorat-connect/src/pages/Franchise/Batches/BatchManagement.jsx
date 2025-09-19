@@ -1,198 +1,225 @@
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Layers, Pencil } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-export default function BatchManagement() {
-  const [batches, setBatches] = useState([
-    { id: 1, name: "Java FullStack", franchise: "Wagholi", students: 20, start: "2025-01-01", end: "2025-06-30", status: "Active" },
-    { id: 2, name: "Android", franchise: "AhilyaNagar", students: 15, start: "2025-02-01", end: "2025-07-31", status: "Active" },
-    { id: 3, name: "Data Science", franchise: "Wagholi", students: 12, start: "2025-03-15", end: "2025-09-15", status: "Inactive" }
-  ]);
-
+const BatchManagement = () => {
+  const [batches, setBatches] = useState([]);
   const [search, setSearch] = useState("");
-  const [editBatch, setEditBatch] = useState(null); // store selected batch for editing
+  const [newBatch, setNewBatch] = useState({
+    name: "",
+    franchise: "",
+    students: "",
+    start: "",
+    end: "",
+    status: "Active",
+  });
+  const [editBatch, setEditBatch] = useState(null);
 
-  const filteredBatches = useMemo(
-    () => batches.filter(b => b.name.toLowerCase().includes(search.toLowerCase())),
-    [search, batches]
-  );
+  // ✅ Fetch all batches from backend
+  const fetchBatches = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/batches/");
+      setBatches(res.data);
+    } catch (err) {
+      console.error("Error fetching batches:", err);
+    }
+  };
 
-  // Save edited batch
-  const handleEditSave = (e) => {
+  useEffect(() => {
+    fetchBatches();
+  }, []);
+
+  // ✅ Handle Add Batch form input
+  const handleAddChange = (e) => {
+    setNewBatch({ ...newBatch, [e.target.name]: e.target.value });
+  };
+
+  // ✅ Save new batch to backend
+  const handleAddSave = async (e) => {
     e.preventDefault();
-    setBatches(prev =>
-      prev.map(b => (b.id === editBatch.id ? editBatch : b))
-    );
-    setEditBatch(null); // close dialog
+    try {
+      await axios.post("http://127.0.0.1:8000/api/batches/add/", newBatch);
+      setNewBatch({ name: "", franchise: "", students: "", start: "", end: "", status: "Active" });
+      fetchBatches(); // refresh list
+    } catch (err) {
+      console.error("Error adding batch:", err);
+    }
+  };
+
+  // ✅ Handle Edit Batch
+  const handleEditChange = (e) => {
+    setEditBatch({ ...editBatch, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSave = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://127.0.0.1:8000/api/batches/${editBatch.id}/update/`, editBatch);
+      setEditBatch(null);
+      fetchBatches();
+    } catch (err) {
+      console.error("Error updating batch:", err);
+    }
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-red-700">Batch Management</h1>
-
-        <div className="flex gap-2">
-          <Input
-            placeholder="Search batch by name"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-64 border-gray-300 focus:border-red-500 focus:ring-red-500 transition"
-          />
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-red-500 to-red-700 hover:opacity-90 transition hover:scale-105">
-                <Plus className="mr-2 h-4 w-4" /> Add Batch
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Batch</DialogTitle>
-              </DialogHeader>
-              <form className="space-y-4">
-                <Input placeholder="Batch Name" />
-                <Input placeholder="Franchise" />
-                <Input type="number" placeholder="Students" />
-                <Input type="date" placeholder="Start Date" />
-                <Input type="date" placeholder="End Date" />
-                <select className="w-full border p-2 rounded">
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-                <Button
-                  type="submit"
-                  className="bg-gradient-to-r from-red-500 to-red-700 hover:opacity-90 w-full transition"
-                >
-                  Save
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Batch Management</h2>
+        <Input
+          placeholder="Search batches..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-64"
+        />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { title: "Total Batches", value: batches.length, icon: <Layers /> },
-          { title: "Active Batches", value: batches.filter(b => b.status === "Active").length },
-          { title: "Inactive Batches", value: batches.filter(b => b.status === "Inactive").length }
-        ].map((stat, i) => (
-          <Card key={i} className="border shadow-sm hover:shadow-lg transition rounded-xl hover:scale-105">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-600">{stat.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-bold flex items-center gap-2 text-red-700">
-              {stat.icon} {stat.value}
-            </CardContent>
-          </Card>
-        ))}
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{batches.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {batches.filter((b) => b.status === "Active").length}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Inactive Batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {batches.filter((b) => b.status === "Inactive").length}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Table */}
-      <div className="border rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-100">
-              <TableHead className="text-black font-semibold">Name</TableHead>
-              <TableHead className="text-black font-semibold">Franchise</TableHead>
-              <TableHead className="text-black font-semibold">Students</TableHead>
-              <TableHead className="text-black font-semibold">Start Date</TableHead>
-              <TableHead className="text-black font-semibold">End Date</TableHead>
-              <TableHead className="text-black font-semibold">Status</TableHead>
-              <TableHead className="text-black font-semibold">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredBatches.map((batch) => (
-              <TableRow key={batch.id} className="hover:bg-gray-50 transition">
-                <TableCell>{batch.name}</TableCell>
-                <TableCell>{batch.franchise}</TableCell>
-                <TableCell>{batch.students}</TableCell>
-                <TableCell>{batch.start}</TableCell>
-                <TableCell>{batch.end}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={batch.status === "Active" ? "default" : "secondary"}
-                    className={batch.status === "Active" ? "bg-green-500 text-white" : "bg-gray-400 text-white"}
-                  >
-                    {batch.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Dialog open={editBatch?.id === batch.id} onOpenChange={(open) => !open && setEditBatch(null)}>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => setEditBatch(batch)}
-                      >
-                        <Pencil className="h-4 w-4" /> Edit
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Edit Batch</DialogTitle>
-                      </DialogHeader>
-                      {editBatch && (
-                        <form className="space-y-4" onSubmit={handleEditSave}>
-                          <Input
-                            value={editBatch.name}
-                            onChange={(e) => setEditBatch({ ...editBatch, name: e.target.value })}
-                            placeholder="Batch Name"
-                          />
-                          <Input
-                            value={editBatch.franchise}
-                            onChange={(e) => setEditBatch({ ...editBatch, franchise: e.target.value })}
-                            placeholder="Franchise"
-                          />
-                          <Input
-                            type="number"
-                            value={editBatch.students}
-                            onChange={(e) => setEditBatch({ ...editBatch, students: Number(e.target.value) })}
-                            placeholder="Students"
-                          />
-                          <Input
-                            type="date"
-                            value={editBatch.start}
-                            onChange={(e) => setEditBatch({ ...editBatch, start: e.target.value })}
-                          />
-                          <Input
-                            type="date"
-                            value={editBatch.end}
-                            onChange={(e) => setEditBatch({ ...editBatch, end: e.target.value })}
-                          />
-                          <select
-                            value={editBatch.status}
-                            onChange={(e) => setEditBatch({ ...editBatch, status: e.target.value })}
-                            className="w-full border p-2 rounded"
-                          >
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                          </select>
+      {/* Add Batch */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="bg-gradient-to-r from-red-500 to-red-700 hover:opacity-90 transition">
+            Add Batch
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Batch</DialogTitle>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handleAddSave}>
+            <Input name="name" value={newBatch.name} onChange={handleAddChange} placeholder="Batch Name" required />
+            <Input name="franchise" value={newBatch.franchise} onChange={handleAddChange} placeholder="Franchise" required />
+            <Input type="number" name="students" value={newBatch.students} onChange={handleAddChange} placeholder="Students" required />
+            <Input type="date" name="start" value={newBatch.start} onChange={handleAddChange} required />
+            <Input type="date" name="end" value={newBatch.end} onChange={handleAddChange} required />
+            <select name="status" value={newBatch.status} onChange={handleAddChange} className="w-full border p-2 rounded">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <Button type="submit" className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:opacity-90 transition">
+              Save
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Batch List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <table className="w-full border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 border">Name</th>
+                <th className="p-2 border">Franchise</th>
+                <th className="p-2 border">Students</th>
+                <th className="p-2 border">Start</th>
+                <th className="p-2 border">End</th>
+                <th className="p-2 border">Status</th>
+                <th className="p-2 border">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {batches
+                .filter((b) => b.name.toLowerCase().includes(search.toLowerCase()))
+                .map((b) => (
+                  <tr key={b.id}>
+                    <td className="p-2 border">{b.name}</td>
+                    <td className="p-2 border">{b.franchise}</td>
+                    <td className="p-2 border">{b.students}</td>
+                    <td className="p-2 border">{b.start}</td>
+                    <td className="p-2 border">{b.end}</td>
+                    <td className="p-2 border">{b.status}</td>
+                    <td className="p-2 border">
+                      <Dialog>
+                        <DialogTrigger asChild>
                           <Button
-                            type="submit"
-                            className="bg-gradient-to-r from-red-500 to-red-700 hover:opacity-90 w-full transition"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditBatch(b)}
                           >
-                            Save Changes
+                            Edit
                           </Button>
-                        </form>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                        </DialogTrigger>
+                        {editBatch && editBatch.id === b.id && (
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Batch</DialogTitle>
+                            </DialogHeader>
+                            <form className="space-y-4" onSubmit={handleEditSave}>
+                              <Input name="name" value={editBatch.name} onChange={handleEditChange} required />
+                              <Input name="franchise" value={editBatch.franchise} onChange={handleEditChange} required />
+                              <Input type="number" name="students" value={editBatch.students} onChange={handleEditChange} required />
+                              <Input type="date" name="start" value={editBatch.start} onChange={handleEditChange} required />
+                              <Input type="date" name="end" value={editBatch.end} onChange={handleEditChange} required />
+                              <select name="status" value={editBatch.status} onChange={handleEditChange} className="w-full border p-2 rounded">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                              </select>
+                              <Button type="submit" className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:opacity-90 transition">
+                                Save Changes
+                              </Button>
+                            </form>
+                          </DialogContent>
+                        )}
+                      </Dialog>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default BatchManagement;
