@@ -15,11 +15,14 @@ import FranchiseProfile from "../Profile/FranchiseProfile";
 import FracnhiseSetting from "../Setting/FranchiseSetting";
 import { Menu, X } from "lucide-react";
 
-export default function FranchiseLayout({ user, onLogout }) {
+export default function FranchiseLayout({ user, onLogout, branch }) {
   const [activePage, setActivePage] = useState("Dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  const [data,setData] =useState('')
+
 
   // Track window resize for responsive menu
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function FranchiseLayout({ user, onLogout }) {
       case "Staff Management":
         return <StaffManagement />;
       case "Student Management":
-        return <StudentManagement />;
+        return <StudentManagement set_data={data} />;
       case "Course Management":
         return <CourseManagement />;
       case "Batch Management":
@@ -97,7 +100,9 @@ export default function FranchiseLayout({ user, onLogout }) {
         unreadCount={notifications.filter((n) => !n.read).length}
         onBellClick={() => setActivePage("Notifications")}
         onMenuToggle={() => setMobileOpen((prev) => !prev)}
+        sentDataToLayout={setData}
       />
+
 
       <div className="flex flex-1 relative">
         {/* Sidebar */}

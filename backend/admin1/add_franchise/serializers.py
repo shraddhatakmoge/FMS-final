@@ -30,25 +30,31 @@ class FranchiseSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email = validated_data.pop("email")
+        name = validated_data.pop("name")
         password = validated_data.pop("password")
 
+        # Check if email already exists
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "This email is already registered."})
 
-        # create user
+        # Create the user
         user = User.objects.create_user(
-            username=email,
+            username=name,
             email=email,
             password=password,
             role="franchise_head"
         )
 
-        # link user to franchise
-        franchise = AddFranchise.objects.create(user=user, **validated_data)
+        # Link user to franchise and include the name
+        franchise = AddFranchise.objects.create(
+            user=user,
+            name=name,
+            **validated_data
+        )
 
-        # send email asynchronously
+        # Send welcome email asynchronously
         threading.Thread(
-            target=send_welcome_email, 
+            target=send_welcome_email,
             args=(email, franchise.name, password)
         ).start()
 

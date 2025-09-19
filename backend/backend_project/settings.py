@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "admin1.add_franchise",  
     "admin1.profiles",
     "corsheaders",
+    "Franchise.add_student",
     'rest_framework_simplejwt.token_blacklist',  
     "admin1.add_staff",
 ]

@@ -105,7 +105,7 @@ function FranchiseManagement({ setActivePage }) {
       return;
     }
 
-    const franchiseData = {
+    const newFranchise = {
       name,
       location,
       email,
