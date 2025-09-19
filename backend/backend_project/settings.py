@@ -17,7 +17,7 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
+ 
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -34,8 +34,9 @@ INSTALLED_APPS = [
     "notifications",
     'Franchise.add_batch',
     "corsheaders",
+    "Franchise.add_student",
     'rest_framework_simplejwt.token_blacklist',  
- 
+    "admin1.add_staff",
 ]
 
 MIDDLEWARE = [

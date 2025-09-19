@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import { AdminSidebar } from "../Layout/AdminSidebar";
-
-// Pages
 import { DashboardContent } from "../Dashboard/DashboardContent";
 import FranchiseManagement from "../Franchise/FranchiseManagement";
 import StaffManagement from "../../Franchise/staff/staffmanagement";
@@ -17,15 +15,10 @@ import EventsWorkshop from "../Events&Workshop/EventsWorkshop";
 import FeedbackPage from "../Feedback/FeedbackPage";
 import AdminProfile from "../Profile/AdminProfile";
 import AdminSetting from "../Setting/AdminSetting";
-
-import { Menu, X } from "lucide-react";
 import PaymentBilling from "../Payment&Billing/PaymentBilling";
 
-export default function AdminLayout({ onLogout }) {
+export default function AdminLayout({ onLogout, user }) {
   const navigate = useNavigate();
-
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Dummy data
   const [franchises] = useState([
@@ -39,7 +32,6 @@ export default function AdminLayout({ onLogout }) {
     { id: 3, message: "Franchise updated profile", time: "30 min ago", franchiseId: 1, read: false },
   ]);
 
-  // Mark read handlers
   const handleMarkRead = (id) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -52,52 +44,28 @@ export default function AdminLayout({ onLogout }) {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
-      <Header
-        onNotificationsClick={() => navigate("/admin/notifications")}
-        unreadCount={notifications.filter((n) => !n.read).length}
-        onGoHome={() => navigate("/admin/dashboard")}
-        setActivePage={(page) => navigate(`/admin/${page}`)}
-        onLogout={onLogout}
-      />
-
-      <div className="flex flex-1 relative">
-        {/* Sidebar */}
-        <AdminSidebar
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          mobileOpen={mobileOpen}
-          setMobileOpen={setMobileOpen}
+      {/* Sticky Header */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-border z-50 flex items-center justify-between px-4">
+        <Header
+          onNotificationsClick={() => navigate("/admin/notifications")}
           unreadCount={notifications.filter((n) => !n.read).length}
+          onGoHome={() => navigate("/admin/dashboard")}
+          onLogout={onLogout}
+          setActivePage={(page, state) => navigate(`/admin/${page}`, { state })}
+          email_user={user?.email}
         />
+      </header>
+
+      <div className="flex flex-1 relative mt-16">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r border-border h-full fixed lg:static z-40">
+          <AdminSidebar
+            unreadCount={notifications.filter((n) => !n.read).length}
+          />
+        </div>
 
         {/* Main content */}
-        <main className="flex-1 p-6 overflow-y-auto relative">
-          {/* Floating Hamburger / X button */}
-          <div className="mb-4">
-            <button
-              className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
-              onClick={() =>
-                window.innerWidth < 1024
-                  ? setMobileOpen((prev) => !prev)
-                  : setCollapsed((prev) => !prev)
-              }
-            >
-              {window.innerWidth < 1024 ? (
-                mobileOpen ? (
-                  <X className="h-6 w-6 text-gray-700" />
-                ) : (
-                  <Menu className="h-6 w-6 text-gray-700" />
-                )
-              ) : collapsed ? (
-                <X className="h-6 w-6 text-gray-700" />
-              ) : (
-                <Menu className="h-6 w-6 text-gray-700" />
-              )}
-            </button>
-          </div>
-
-          {/* Nested routes */}
+        <main className="flex-1 p-6 overflow-y-auto ">
           <Routes>
             <Route path="dashboard" element={<DashboardContent />} />
             <Route path="settings" element={<AdminSetting />} />
@@ -105,7 +73,7 @@ export default function AdminLayout({ onLogout }) {
             <Route path="course" element={<CourseManagement />} />
             <Route path="staff" element={<StaffManagement />} />
             <Route path="student" element={<StudentManagement />} />
-            <Route path="payments" element={<PaymentBilling/>}/>
+            <Route path="payments" element={<PaymentBilling />} />
             <Route path="batch" element={<BatchManagement />} />
             <Route path="attendance" element={<AttendanceSystem />} />
             <Route path="reports" element={<ReportAnalysis />} />
@@ -131,4 +99,3 @@ export default function AdminLayout({ onLogout }) {
     </div>
   );
 }
-    

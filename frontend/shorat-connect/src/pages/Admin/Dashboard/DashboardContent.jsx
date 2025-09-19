@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Building2,
   Users,
@@ -15,11 +16,33 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-// ✅ Import StatsCard as named export
 import { StatsCard } from "./StatsCard";
+import { useNavigate } from "react-router-dom";
 
 export const DashboardContent = () => {
+  const [franchises, setFranchises] = useState([]);
+  const navigate = useNavigate()
+
+
+  // Fetch franchises from API
+  const fetchFranchises = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/add-franchise/franchise/");
+      setFranchises(res.data.results || res.data || []);
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchFranchises();
+  }, []);
+
+  // Derived stats
+  const totalFranchises = franchises.length;
+  const activeFranchises = franchises.filter((f) => f.status === "active").length;
+  const inactiveFranchises = franchises.filter((f) => f.status === "inactive").length;
+
   return (
     <div className="p-6 space-y-6">
       {/* Welcome Banner */}
@@ -32,56 +55,25 @@ export const DashboardContent = () => {
         </p>
       </div>
 
-      {/* 6 Stats Cards */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatsCard
           title="Total Franchises"
-          value="2"
+          value={totalFranchises}
           icon={Building2}
           trend={{ isPositive: true, value: 12 }}
           badge="F"
           color="primary"
         />
         <StatsCard
-          title="Total Staff"
-          value="20"
+          title="Active Franchises"
+          value={activeFranchises}
           icon={Users}
           trend={{ isPositive: true, value: 8 }}
-          badge="S"
-          color="success"
-        />
-        <StatsCard
-          title="Total Students"
-          value="150"
-          icon={GraduationCap}
-          trend={{ isPositive: true, value: 15 }}
-          badge="ST"
-          color="info"
-        />
-        <StatsCard
-          title="Current Month Revenue"
-          value="₹ 18,00,000"
-          icon={CreditCard}
-          trend={{ isPositive: true, value: 24 }}
-          badge="₹"
-          color="warning"
-        />
-        <StatsCard
-          title="Active Students"
-          value="87"
-          icon={TrendingUp}
-          trend={{ isPositive: true, value: 5 }}
           badge="A"
           color="success"
         />
-        <StatsCard
-          title="Certificates Issued"
-          value="350"
-          icon={Award}
-          trend={{ isPositive: true, value: 10 }}
-          badge="C"
-          color="destructive"
-        />
+        {/* You can add more cards like Revenue, Students, etc. */}
       </div>
 
       {/* Recent Activities & Quick Actions */}
@@ -96,26 +88,9 @@ export const DashboardContent = () => {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm">
-              <li>
-                🟢 New student enrolled -{" "}
-                <span className="text-gray-500">2 minutes ago</span>
-              </li>
-              <li>
-                🔵 Payment received from Franchise #12 -{" "}
-                <span className="text-gray-500">15 minutes ago</span>
-              </li>
-              <li>
-                🟡 New staff member added -{" "}
-                <span className="text-gray-500">1 hour ago</span>
-              </li>
-              <li>
-                🟢 Course completion certificate issued -{" "}
-                <span className="text-gray-500">2 hours ago</span>
-              </li>
-              <li>
-                🟠 Monthly report generated -{" "}
-                <span className="text-gray-500">3 hours ago</span>
-              </li>
+              {franchises.slice(0, 5).map((f) => (
+                <li key={f.id}>🟢 {f.name} added at {f.location}</li>
+              ))}
             </ul>
           </CardContent>
         </Card>
@@ -127,8 +102,8 @@ export const DashboardContent = () => {
             <CardDescription>Frequently used actions</CardDescription>
           </CardHeader>
           <CardContent className="flex space-x-4">
-            <Button variant="outline">View Reports</Button>
-            <Button>Generate Certificate</Button>
+            <Button variant="outline" onClick={() => navigate("/admin/reports")}>View Reports</Button>
+            <Button variant="outline">Generate Certificate</Button>
           </CardContent>
         </Card>
       </div>
