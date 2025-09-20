@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
+
+
 import {
   Card,
   CardContent,
@@ -99,54 +101,62 @@ function FranchiseManagement({ setActivePage }) {
   }, []);
 
   // Save or Update franchise
-  const handleSave = async () => {
-    if (!name || !location || !startDate || !status || !email || !password) {
-      alert("Please fill in all fields");
-      return;
+
+const handleSave = async () => {
+  if (!name || !location || !startDate || !status || !email || !password) {
+    alert("Please fill in all fields");
+    return;
+  }
+
+  const newFranchise = {
+    name,
+    location,
+    email,
+    password,
+    start_date: startDate,
+    status,
+  };
+
+  try {
+    const res = await axios.post(
+      "http://127.0.0.1:8000/api/add-franchise/franchise/",
+      newFranchise
+    );
+
+    
+    
+
+    // ✅ If backend returns the full object, push it into list
+    if (res.data?.franchise) {
+      setFranchises([res.data.franchise, ...franchises]);
+    } else if (res.data?.id) {
+      setFranchises([res.data, ...franchises]);
+    } else {
+      fetchFranchises();
     }
 
-    const newFranchise = {
-      name,
-      location,
-      email,
-      password,
-      start_date: startDate,
-      status,
-    };
+    // ✅ Reset form
+    setName("");
+    setLocation("");
+    setEmail("");
+    setPassword("");
+    setStartDate("");
+    setStatus("");
 
-    try {
-      const res = await axios.post(
-        "http://127.0.0.1:8000/api/add-franchise/franchise/",
-        newFranchise
-      );
+    // ✅ Close dialog
+    setOpen(false);
+    setSelectedFranchise(null);
 
-      // ✅ Update list instantly
-      setFranchises([res.data, ...franchises]);
+  } catch (err) {
+    console.error("❌ Save error:", err.response?.data || err.message);
+    const errorMsg =
+      err.response?.data?.email ||
+      err.response?.data?.detail ||
+      "Save failed. Try again.";
+    alert(errorMsg);
+  }
+};
 
-      // ✅ Reset form
-      setName("");
-      setLocation("");
-      setEmail("");
-      setPassword("");
-      setStartDate("");
-      setStatus("");
-
-      // ✅ Close dialog
-      setOpen(false);
-
-      // ✅ Clear selected franchise
-      setSelectedFranchise(null);
-
-      // ✅ Refresh notifications after adding
-      fetchNotifications?.();
-    } catch (err) {
-  console.error("❌ Save error:", err.response?.data || err.message);
-  const errorMsg = err.response?.data?.email 
-    || err.response?.data?.detail 
-    || "Save failed. Try again.";
-  alert(errorMsg);  // <-- show error to user
-}
-  };
 
   // Delete Franchise
   const handleDelete = async (id) => {

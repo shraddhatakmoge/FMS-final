@@ -11,11 +11,10 @@ class FranchiseViewSet(viewsets.ModelViewSet):
     queryset = AddFranchise.objects.all().order_by('-created_at')
     serializer_class = FranchiseSerializer
 
+    
     def perform_create(self, serializer):
-        instance = serializer.save()
-        # CORRECTED: Use 'instance.name' to match your model
-        message = f"A new franchise has been added: {instance.name}" 
-        create_notification(message)
+        franchise = serializer.save()
+        return franchise
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
