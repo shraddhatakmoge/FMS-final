@@ -6,15 +6,16 @@ const CourseManagement = () => {
   const [statusFilter, setStatusFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [branchFilter, setBranchFilter] = useState("");
+  const [error, setError] = useState("");
 
   // Fetch courses from backend (franchise head view)
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // ✅ Get the token stored after login
-        const token = localStorage.getItem("token");
+        // ✅ Use correct key: access token stored at login
+        const token = localStorage.getItem("access");
         if (!token) {
-          console.warn("No token found in localStorage");
+          setError("You must be logged in as Franchise Head to view courses.");
           return;
         }
 
@@ -30,6 +31,7 @@ const CourseManagement = () => {
         setCourses(res.data); // ✅ set courses
       } catch (err) {
         console.error("Failed to fetch courses:", err);
+        setError("Failed to fetch courses. Please try again.");
       }
     };
 
@@ -64,6 +66,13 @@ const CourseManagement = () => {
 
   return (
     <div className="p-4 sm:p-6">
+      {/* Show error if not logged in or failed */}
+      {error && (
+        <div className="bg-red-100 text-red-600 p-3 mb-4 rounded">
+          {error}
+        </div>
+      )}
+
       {/* Branch Filter Dropdown */}
       <div className="flex gap-4 mb-4 mt-16">
         <select

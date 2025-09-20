@@ -4,7 +4,7 @@ from .models import Course
 from .serializers import CourseSerializer
 from notifications.services import create_notification
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from .models import Course
 from .serializers import CourseSerializer
@@ -27,14 +27,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         instance = serializer.save()
         message = f"A new course has been added: {instance.name}"
         create_notification(message)
-    
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])  # franchise heads must be logged in
+@permission_classes([IsAuthenticated])  # ✅ only logged-in users
 def franchise_courses_list(request):
-    """
-    Read-only API for franchise heads to view all courses.
-    """
-    # Optional: filter by branch if your franchise head user has a branch
     courses = Course.objects.all()
     serializer = CourseSerializer(courses, many=True)
     return Response(serializer.data)

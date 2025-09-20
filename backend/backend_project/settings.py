@@ -134,11 +134,11 @@ from datetime import timedelta
 
 # settings.py
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # ✅ JWT
+   'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
 }
 
@@ -158,6 +158,9 @@ CORS_ALLOWED_ORIGINS = [
     # Add any other frontend origins here
 ]
 
-
-
-
+EEMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'shraddhatakmoge@gmail.com'
+EMAIL_HOST_PASSWORD = 'faia mpxu vxti nrkz'  # Google App Password

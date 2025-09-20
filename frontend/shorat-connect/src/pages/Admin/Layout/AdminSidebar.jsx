@@ -12,6 +12,7 @@ import {
   X,
   ClipboardCheck,
   Settings,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ export const AdminSidebar = ({
     },
     { icon: Building2, label: "Franchise Management", path: "franchise" },
     { icon: CreditCard, label: "Payments & Billing", path: "payments" },
+    { icon: Users, label: "Staff Management ", path: "staff" },
     { icon: BookOpen, label: "Course Management", path: "course" },
     { icon: ClipboardCheck, label: "Attendance System", path: "attendance" },
     { icon: FileText, label: "Reports & Analytics", path: "reports" },
