@@ -37,11 +37,10 @@ INSTALLED_APPS = [
     "Franchise.add_student",
     'rest_framework_simplejwt.token_blacklist',  
     "admin1.add_staff",
-<<<<<<< HEAD
+
     'rest_framework.authtoken', 
-=======
+
     "admin1.notifications",
->>>>>>> 0e4e6f2643de68422040e1c858d812192d5886c7
 ]
 
 MIDDLEWARE = [

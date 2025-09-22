@@ -25,20 +25,20 @@ urlpatterns = [
 
     # Courses API
     path("api/courses/", include("admin1.add_course.urls")),
-<<<<<<< HEAD
+
 
     # Batches API
     path("api/batches/", include("Franchise.add_batch.urls")),
 
     # Notifications API
-    path("api/notifications/", include("notifications.urls")),
+    
 
     # ✅ JWT endpoints
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-=======
+
     path('api/batches/', include('Franchise.add_batch.urls')),
     
     path("api/notifications/", include("admin1.notifications.urls")),
->>>>>>> 0e4e6f2643de68422040e1c858d812192d5886c7
+
 ]
