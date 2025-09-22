@@ -51,12 +51,12 @@ def franchise_deleted(sender, instance, **kwargs):
 def event_saved(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
-            message=f"Event '{instance.title}' was added.",
+            message=f"Event '{instance.name}' was added.",
             franchise=instance.franchise if hasattr(instance, "franchise") else None
         )
     else:
         Notification.objects.create(
-            message=f"Event '{instance.title}' was updated.",
+            message=f"Event '{instance.name}' was updated.",
             franchise=instance.franchise if hasattr(instance, "franchise") else None
         )
 
@@ -64,6 +64,6 @@ def event_saved(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=Event)
 def event_deleted(sender, instance, **kwargs):
     Notification.objects.create(
-        message=f"Event '{instance.title}' was removed.",
+        message=f"Event '{instance.name}' was removed.",
         franchise=instance.franchise if hasattr(instance, "franchise") else None
     )
