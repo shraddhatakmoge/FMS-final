@@ -21,5 +21,6 @@ urlpatterns = [
 
     path("api/courses/", include("admin1.add_course.urls")),
     path('api/batches/', include('Franchise.add_batch.urls')),
-    path("api/notifications/", include("notifications.urls")),
+    
+    path("api/notifications/", include("admin1.notifications.urls")),
 ]
