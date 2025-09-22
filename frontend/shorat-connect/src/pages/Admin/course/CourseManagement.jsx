@@ -108,12 +108,32 @@ const CourseManagement = () => {
   };
 
   // Delete course
-  const handleDelete = (index) => {
-    if (window.confirm("Are you sure you want to delete this course?")) {
-      const globalIndex = courses.findIndex(c => c === filteredCourses[index]);
-      setCourses(courses.filter((_, i) => i !== globalIndex));
+  // Delete course
+const handleDelete = async (index) => {
+  if (window.confirm("Are you sure you want to delete this course?")) {
+    try {
+      const courseToDelete = filteredCourses[index];
+
+
+      
+      const response = await fetch(`http://127.0.0.1:8000/api/courses/${courseToDelete.id}/`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // remove from local state
+        const globalIndex = courses.findIndex(c => c.id === courseToDelete.id);
+        setCourses(courses.filter((_, i) => i !== globalIndex));
+      } else {
+        throw new Error("Failed to delete course");
+      }
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      alert("Failed to delete course!");
     }
-  };
+  }
+};
+
 
   // Toggle status
   const toggleStatus = (index) => {

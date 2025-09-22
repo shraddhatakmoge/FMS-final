@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AuthContext } from "../context/AuthContext.jsx"
+import { AuthContext } from "../context/AuthContext.jsx";
 import {
   Select,
   SelectContent,
@@ -34,10 +34,9 @@ function EventsWorkshop() {
     location: "",
     startDate: "",
     endDate: "",
-    status: "Upcoming",
+    status: "upcoming", // ✅ always lowercase
   });
 
-  // ✅ Get fetchNotifications from NotificationContext
   const { fetchNotifications } = useContext(NotificationContext);
 
   // 🔹 Fetch events from Django API
@@ -52,19 +51,21 @@ function EventsWorkshop() {
             location: item.location,
             startDate: item.start_date,
             endDate: item.end_date,
-            status: item.status === "upcoming" ? "Upcoming" : "Completed",
+            status: item.status.toLowerCase(), // ✅ normalize
           }))
         )
       )
       .catch((err) => console.error("Failed to fetch events", err));
   }, []);
 
+  // 🔎 Filter events
   const filteredEvents = events.filter(
     (e) =>
-      (status === "All" || e.status === status) &&
+      (status === "All" || e.status === status.toLowerCase()) &&
       e.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // ➕ Add or Update Event
   const handleAddOrUpdateEvent = async () => {
     if (!newEvent.name || !newEvent.location || !newEvent.startDate || !newEvent.endDate) {
       alert("Please fill in all fields");
@@ -104,23 +105,33 @@ function EventsWorkshop() {
           location: savedEvent.location,
           startDate: savedEvent.start_date,
           endDate: savedEvent.end_date,
-          status: savedEvent.status === "upcoming" ? "Upcoming" : "Completed",
+          status: savedEvent.status.toLowerCase(),
         };
 
         if (editIndex !== null) {
-          const updated = [...events];
-          updated[editIndex] = formatted;
-          setEvents(updated);
+          setEvents((prev) => {
+            const updated = [...prev];
+            updated[editIndex] = formatted;
+            return updated;
+          });
         } else {
-          setEvents([...events, formatted]);
+          setEvents((prev) => [...prev, formatted]); // ✅ immediate update
         }
 
-        // ✅ Refresh notifications after creating/updating event
+        // Refresh notifications
         fetchNotifications();
 
+        // ✅ Close modal + reset
         setShowForm(false);
         setEditIndex(null);
-        setNewEvent({ id: null, name: "", location: "", startDate: "", endDate: "", status: "Upcoming" });
+        setNewEvent({
+          id: null,
+          name: "",
+          location: "",
+          startDate: "",
+          endDate: "",
+          status: "upcoming",
+        });
       } else {
         console.error("Failed to save event");
       }
@@ -129,15 +140,24 @@ function EventsWorkshop() {
     }
   };
 
+  // 🗑 Delete Event
   const handleDelete = async (index) => {
     const id = events[index].id;
     if (window.confirm("Are you sure you want to delete this event?")) {
       try {
         const res = await fetch(`http://127.0.0.1:8000/api/events/${id}/`, {
           method: "DELETE",
+          headers: { "Content-Type": "application/json" },
         });
+
+        console.log("Delete status:", res.status);
+
         if (res.ok) {
           setEvents(events.filter((_, i) => i !== index));
+        } else {
+          const errorText = await res.text();
+          console.error("Delete failed:", res.status, errorText);
+          alert("Failed to delete event. Check backend logs.");
         }
       } catch (err) {
         console.error("Failed to delete", err);
@@ -145,6 +165,7 @@ function EventsWorkshop() {
     }
   };
 
+  // ✏ Edit Event
   const handleEdit = (index) => {
     setNewEvent({ ...events[index] });
     setEditIndex(index);
@@ -166,7 +187,7 @@ function EventsWorkshop() {
             <CardTitle>Upcoming</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">
-            {events.filter((e) => e.status === "Upcoming").length}
+            {events.filter((e) => e.status === "upcoming").length}
           </CardContent>
         </Card>
         <Card className="bg-gray-500 text-white shadow-lg">
@@ -174,7 +195,7 @@ function EventsWorkshop() {
             <CardTitle>Completed</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">
-            {events.filter((e) => e.status === "Completed").length}
+            {events.filter((e) => e.status === "completed").length}
           </CardContent>
         </Card>
       </div>
@@ -193,8 +214,8 @@ function EventsWorkshop() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="All">All</SelectItem>
-            <SelectItem value="Upcoming">Upcoming</SelectItem>
-            <SelectItem value="Completed">Completed</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
           </SelectContent>
         </Select>
         <Button
@@ -202,7 +223,14 @@ function EventsWorkshop() {
           onClick={() => {
             setShowForm(true);
             setEditIndex(null);
-            setNewEvent({ id: null, name: "", location: "", startDate: "", endDate: "", status: "Upcoming" });
+            setNewEvent({
+              id: null,
+              name: "",
+              location: "",
+              startDate: "",
+              endDate: "",
+              status: "upcoming",
+            });
           }}
         >
           + Add Event
@@ -210,7 +238,7 @@ function EventsWorkshop() {
       </div>
 
       {/* Add/Edit Event Form */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={(isOpen) => setShowForm(isOpen)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editIndex !== null ? "Edit Event" : "Add New Event"}</DialogTitle>
@@ -247,15 +275,15 @@ function EventsWorkshop() {
             </div>
 
             <Select
-              onValueChange={(val) => setNewEvent({ ...newEvent, status: val })}
-              value={newEvent.status}
+              onValueChange={(val) => setNewEvent({ ...newEvent, status: val.toLowerCase() })}
+              value={newEvent.status.toLowerCase()}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Upcoming">Upcoming</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
+                <SelectItem value="upcoming">Upcoming</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -301,10 +329,10 @@ function EventsWorkshop() {
                   <td className="p-3">
                     <span
                       className={`px-3 py-1 rounded-full text-white text-sm ${
-                        event.status === "Upcoming" ? "bg-green-500" : "bg-gray-500"
+                        event.status === "upcoming" ? "bg-green-500" : "bg-gray-500"
                       }`}
                     >
-                      {event.status}
+                      {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
                     </span>
                   </td>
                   <td className="p-3 flex flex-wrap gap-2">
