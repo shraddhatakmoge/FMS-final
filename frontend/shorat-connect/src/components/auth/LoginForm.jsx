@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 export const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState(""); // 👈 role state
+  const [role, setRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -44,21 +44,23 @@ export const LoginForm = ({ onLogin }) => {
       const response = await fetch("http://127.0.0.1:8000/api/accounts/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role }), // 👈 send role also
+        body: JSON.stringify({ email, password, role }),
       });
 
       const data = await response.json();
+      console.log("Login API response:", data);
 
-      if (response.ok && data.success) {
-        // ✅ Save token, role, and branch
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role || role);     // use backend role if available
+      if (response.ok) {
+        // ✅ Save JWT tokens + role/branch/email
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh);
+        localStorage.setItem("role", data.role || role);
         localStorage.setItem("branch", data.branch || "");
         localStorage.setItem("email", email);
 
         toast({
           title: "Login Successful",
-          description: data.message,
+          description: data.message || "You are now logged in",
           variant: "default",
         });
 
@@ -66,12 +68,12 @@ export const LoginForm = ({ onLogin }) => {
           email,
           role: data.role || role,
           branch: data.branch || "",
-          token: data.token,
+          token: data.access,
         });
       } else {
         toast({
           title: "Login Failed",
-          description: data.error || "Invalid credentials",
+          description: data.error || data.detail || "Invalid credentials",
           variant: "destructive",
         });
       }
@@ -139,7 +141,6 @@ export const LoginForm = ({ onLogin }) => {
               </div>
             </div>
 
-            {/* Role selection dropdown */}
             <div>
               <Label className="text-black">Role</Label>
               <Select value={role} onValueChange={setRole}>

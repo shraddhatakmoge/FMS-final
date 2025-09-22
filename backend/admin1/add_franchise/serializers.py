@@ -7,18 +7,20 @@ from .models import AddFranchise
 User = get_user_model()
 
 def send_welcome_email(email, franchise_name, password):
-    """Helper to send email in background"""
-    send_mail(
-        subject="Franchise Management System Login",
-        message=(
-            f"Hello {franchise_name},\n\n"
-            f"Your password for Franchise Management System is: {password}\n\n"
-            f"Please change your password after first login."
-        ),
-        from_email="shraddhatakmoge@gmail.com",  # should match EMAIL_HOST_USER
-        recipient_list=[email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject="Franchise Management System Login",
+            message=(
+                f"Hello {franchise_name},\n\n"
+                f"Your password for Franchise Management System is: {password}\n\n"
+                f"Please change your password after first login."
+            ),
+            from_email="shraddhatakmoge@gmail.com",
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print("Failed to send email:", e)
 
 class FranchiseSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(write_only=True)
@@ -33,29 +35,27 @@ class FranchiseSerializer(serializers.ModelSerializer):
         name = validated_data.pop("name")
         password = validated_data.pop("password")
 
-        # Check if email already exists
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "This email is already registered."})
 
-        # Create the user
+        # ⚡ Make sure your User model has 'role' or remove this
         user = User.objects.create_user(
             username=name,
             email=email,
             password=password,
-            role="franchise_head"
+            role=getattr(User, 'role', 'franchise_head')  # fallback if no role field
         )
 
-        # Link user to franchise and include the name
         franchise = AddFranchise.objects.create(
             user=user,
             name=name,
             **validated_data
         )
 
-        # Send welcome email asynchronously
+        # Send email in background
         threading.Thread(
             target=send_welcome_email,
-            args=(email, franchise.name, password)
+            args=(email, name, password)
         ).start()
 
         return franchise

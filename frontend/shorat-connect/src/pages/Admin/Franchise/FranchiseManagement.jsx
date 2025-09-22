@@ -1,8 +1,5 @@
-import { useState, useEffect, useContext } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
-
 import {
   Card,
   CardContent,
@@ -35,16 +32,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-
-// Import your other management components
-import StaffManagement from "../staff/staffmanagement";
-import StudentManagement from "../student/studentmanagement";
-import BatchManagement from "../Batches/BatchManagement";
+import { getApi } from "@/utils/api"; // ✅ import getApi
 
 export default function FranchiseManagementWrapper() {
-  // Handle navigation
   const [activePage, setActivePage] = useState({
-    page: "franchise", // default page
+    page: "franchise",
     franchise: null,
   });
 
@@ -71,12 +63,13 @@ function FranchiseManagement({ setActivePage }) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedFranchise, setSelectedFranchise] = useState(null);
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate()
-  // Form State  const [name, setName] = useState("");
+  const navigate = useNavigate();
+
+  // Form State
+  const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
   const [status, setStatus] = useState("");
-    const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -86,9 +79,8 @@ function FranchiseManagement({ setActivePage }) {
   // Fetch franchises from API
   const fetchFranchises = async () => {
     try {
-      const res = await axios.get(
-        "http://127.0.0.1:8000/api/add-franchise/franchise/"
-      );
+      const api = getApi();
+      const res = await api.get("add-franchise/franchise/");
       setFranchises(res.data.results || res.data || []);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -101,70 +93,60 @@ function FranchiseManagement({ setActivePage }) {
   }, []);
 
   // Save or Update franchise
-
-const handleSave = async () => {
-  if (!name || !location || !startDate || !status || !email || !password) {
-    alert("Please fill in all fields");
-    return;
-  }
-
-  const newFranchise = {
-    name,
-    location,
-    email,
-    password,
-    start_date: startDate,
-    status,
-  };
-
-  try {
-    const res = await axios.post(
-      "http://127.0.0.1:8000/api/add-franchise/franchise/",
-      newFranchise
-    );
-
-    
-    
-
-    // ✅ If backend returns the full object, push it into list
-    if (res.data?.franchise) {
-      setFranchises([res.data.franchise, ...franchises]);
-    } else if (res.data?.id) {
-      setFranchises([res.data, ...franchises]);
-    } else {
-      fetchFranchises();
+  const handleSave = async () => {
+    if (!name || !location || !startDate || !status || !email || !password) {
+      alert("Please fill in all fields");
+      return;
     }
 
-    // ✅ Reset form
-    setName("");
-    setLocation("");
-    setEmail("");
-    setPassword("");
-    setStartDate("");
-    setStatus("");
+    const newFranchise = {
+      name,
+      location,
+      email,
+      password,
+      start_date: startDate,
+      status,
+    };
 
-    // ✅ Close dialog
-    setOpen(false);
-    setSelectedFranchise(null);
+    try {
+      const api = getApi();
+      const res = await api.post("add-franchise/franchise/", newFranchise);
 
-  } catch (err) {
-    console.error("❌ Save error:", err.response?.data || err.message);
-    const errorMsg =
-      err.response?.data?.email ||
-      err.response?.data?.detail ||
-      "Save failed. Try again.";
-    alert(errorMsg);
-  }
-};
+      if (res.data?.franchise) {
+        setFranchises([res.data.franchise, ...franchises]);
+      } else if (res.data?.id) {
+        setFranchises([res.data, ...franchises]);
+      } else {
+        fetchFranchises();
+      }
 
+      // Reset form
+      setName("");
+      setLocation("");
+      setEmail("");
+      setPassword("");
+      setStartDate("");
+      setStatus("");
+
+      // Close dialog
+      setOpen(false);
+      setSelectedFranchise(null);
+    } catch (err) {
+      console.error("❌ Save error:", err.response?.data || err.message);
+      const errorMsg =
+        err.response?.data?.email ||
+        err.response?.data?.detail ||
+        "Save failed. Try again.";
+      alert(errorMsg);
+    }
+  };
 
   // Delete Franchise
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this franchise?")) {
       try {
-        await axios.delete(
-          `http://127.0.0.1:8000/api/add-franchise/franchise/${id}/`
-        );
+        const api = getApi();
+        await api.delete(`add-franchise/franchise/${id}/`);
         setFranchises((prev) => prev.filter((f) => f.id !== id));
         if (selectedFranchise?.id === id) {
           setSelectedFranchise(null);
@@ -180,10 +162,9 @@ const handleSave = async () => {
     const updatedStatus =
       franchise.status === "active" ? "inactive" : "active";
     try {
-      await axios.patch(
-        `http://127.0.0.1:8000/api/add-franchise/franchise/${franchise.id}/`,
-        { status: updatedStatus }
-      );
+      const api = getApi();
+      await api.patch(`add-franchise/franchise/${franchise.id}/`, { status: updatedStatus });
+
       setFranchises((prev) =>
         prev.map((f) =>
           f.id === franchise.id ? { ...f, status: updatedStatus } : f
@@ -192,9 +173,6 @@ const handleSave = async () => {
       if (selectedFranchise?.id === franchise.id) {
         setSelectedFranchise({ ...franchise, status: updatedStatus });
       }
-
-      // ✅ Refresh notifications after status change
-      fetchNotifications?.();
     } catch (err) {
       console.error("Status toggle error:", err);
     }
@@ -314,9 +292,6 @@ const handleSave = async () => {
                     </span>
                   </TableCell>
                   <TableCell className="flex gap-2">
-                    <Button size="sm" onClick={() => setSelectedFranchise(f)}>
-                      View
-                    </Button>
                     <Button
                       size="sm"
                       className="bg-blue-500 hover:bg-blue-600 text-white"
@@ -500,4 +475,4 @@ const handleSave = async () => {
       </Dialog>
     </div>
   );
-} 
+}

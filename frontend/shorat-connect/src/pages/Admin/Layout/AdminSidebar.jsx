@@ -36,6 +36,7 @@ export const AdminSidebar = ({
     { icon: Building2, label: "Franchise Management", path: "franchise" },
     { icon: CreditCard, label: "Payments & Billing", path: "payments" },
     { icon: Users, label: "Staff Management ", path: "staff" },
+    { icon: Users, label: "Student Management ", path: "student" },
     { icon: BookOpen, label: "Course Management", path: "course" },
     { icon: ClipboardCheck, label: "Attendance System", path: "attendance" },
     { icon: FileText, label: "Reports & Analytics", path: "reports" },

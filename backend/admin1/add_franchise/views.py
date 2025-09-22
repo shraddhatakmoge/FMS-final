@@ -2,8 +2,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+from rest_framework.authtoken.models import Token   # ✅ add this
 from .models import AddFranchise
 from .serializers import FranchiseSerializer
+
 
 User = get_user_model()
 
@@ -27,11 +29,11 @@ class FranchiseViewSet(viewsets.ModelViewSet):
 
     # ✅ Override destroy to also delete User
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.user:
-            instance.user.delete()  # this also deletes AddFranchise (CASCADE)
+        franchise = self.get_object()
+        if franchise.user:
+            franchise.user.delete()  # deletes the user AND the franchise (CASCADE)
         else:
-            instance.delete()
+            franchise.delete()       # fallback
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # Alternative standalone API (optional, if you prefer separate URL)

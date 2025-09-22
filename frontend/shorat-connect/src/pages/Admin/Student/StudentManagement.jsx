@@ -32,7 +32,7 @@ export default function StudentManagement() {
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("http://localhost:8000/api/students/");
+        const res = await axios.get("http://127.0.0.1:8000/api/students/");
         const students = Array.isArray(res.data) ? res.data : res.data.results;
         setRows(students);
       } catch (err) {

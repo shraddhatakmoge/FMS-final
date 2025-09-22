@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Search, UserPlus, Edit, Trash2 } from "lucide-react";
 
+// ------------------------
 // Utility helpers
-const pct = (num, den) => (den === 0 ? 0 : Math.round((num / den) * 100));
-const attendancePct = (days) => pct(days.reduce((a, d) => a + (d.present || 0), 0), days.length);
 const formatINR = (n) => `₹${Number(n || 0).toLocaleString()}`;
 
-// Badge component
 const StatusBadge = ({ status }) => (
   <Badge
     variant={status === "Active" ? "default" : "secondary"}
@@ -24,46 +22,58 @@ const StatusBadge = ({ status }) => (
   </Badge>
 );
 
+// ------------------------
+// Axios request helper to include token dynamically
+const getApi = () => {
+  const token = localStorage.getItem("access_token"); // ✅ JWT token key from login
+  return axios.create({
+    baseURL: "http://127.0.0.1:8000/api/",
+    headers: token ? { Authorization: `Bearer ${token}` } : {}, // ✅ use Bearer
+  });
+};
+
+// ------------------------
 // Add/Edit Student Dialog
 const StudentDialog = ({ onSave, batches, franchises, student }) => {
-  const [form, setForm] = useState(student || {
-    name: "",
-    email: "",
-    phone: "",
-    batch: batches[0] || "",
-    franchise: franchises[0] || "",
-    feesPaid: 0,
-    feesPending: 0,
-    status: "Active",
-  });
+  const [form, setForm] = useState(
+    student || {
+      name: "",
+      email: "",
+      phone: "",
+      batch: batches[0] || "Batch 1",
+      franchise: franchises[0]?.id || "",
+      feesPaid: 0,
+      feesPending: 0,
+      status: "Active",
+    }
+  );
 
-  const seedAttendance = (days = 30) =>
-    Array.from({ length: days }, () => ({ day: 0, present: 1 }));
+  useEffect(() => {
+    if (!student && franchises.length > 0) {
+      setForm((prev) => ({ ...prev, franchise: String(franchises[0].id) }));
+    }
+  }, [franchises, student]);
 
   const handleSave = async () => {
-    const studentData = {
-      id: form.id || `ST-${Math.floor(Math.random() * 10000)}`,
-      ...form,
-      attendance: form.attendance || seedAttendance(),
-    };
+    const studentData = { ...form, franchise_id: Number(form.franchise) };
 
     try {
-      if (student) {
-        await axios.put(`http://localhost:8000/api/students/${student.id}/`, studentData);
-      } else {
-        await axios.post("http://localhost:8000/api/students/", studentData);
-      }
-      onSave(studentData);
+      const api = getApi(); // fresh Axios instance with token
+      const response = student
+        ? await api.put(`students/${student.id}/`, studentData)
+        : await api.post("students/", studentData);
+
+      onSave(response.data);
     } catch (err) {
-      console.error("Error saving student:", err);
-      alert("Failed to save student. Please check the backend.");
+      console.error("Error saving student:", err.response?.data || err);
+      alert(`Failed to save student: ${JSON.stringify(err.response?.data)}`);
     }
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-1 ">
+        <Button variant="outline" className="flex items-center gap-1">
           {student ? <Edit className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
           {student ? "Edit" : "Add"} Student
         </Button>
@@ -83,19 +93,37 @@ const StudentDialog = ({ onSave, batches, franchises, student }) => {
               />
             </div>
           ))}
-          {["batch", "franchise"].map((field) => (
-            <div key={field} className="grid grid-cols-4 items-center gap-2">
-              <Label className="text-right capitalize">{field}</Label>
-              <Select value={form[field]} onValueChange={(v) => setForm({ ...form, [field]: v })}>
-                <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(field === "batch" ? batches : franchises).map((v) => (
-                    <SelectItem key={v} value={v}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
+
+          {/* Batch */}
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="text-right capitalize">Batch</Label>
+            <Select value={form.batch} onValueChange={(v) => setForm({ ...form, batch: v })}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select Batch" />
+              </SelectTrigger>
+              <SelectContent>
+                {batches.map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Franchise */}
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="text-right capitalize">Franchise</Label>
+            <Select value={String(form.franchise)} onValueChange={(v) => setForm({ ...form, franchise: v })}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select a Franchise" />
+              </SelectTrigger>
+              <SelectContent>
+                {franchises.map((f) => (
+                  <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {["feesPaid", "feesPending"].map((field) => (
             <div key={field} className="grid grid-cols-4 items-center gap-2">
               <Label className="text-right capitalize">{field.replace(/([A-Z])/g, " $1")}</Label>
@@ -107,6 +135,7 @@ const StudentDialog = ({ onSave, batches, franchises, student }) => {
               />
             </div>
           ))}
+
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => student && setForm(student)}>Reset</Button>
             <Button className="bg-red-600 hover:bg-red-700 rounded-2xl" onClick={handleSave}>Save</Button>
@@ -117,9 +146,11 @@ const StudentDialog = ({ onSave, batches, franchises, student }) => {
   );
 };
 
+// ------------------------
 // Main Component
 export default function StudentManagement({ set_data }) {
   const [rows, setRows] = useState([]);
+  const [franchises, setFranchises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [batch, setBatch] = useState("All");
@@ -127,32 +158,41 @@ export default function StudentManagement({ set_data }) {
   const [payment, setPayment] = useState("All");
   const [status, setStatus] = useState("All");
 
-  // Fetch students
+  const batches = ["Batch 1", "Batch 2", "Batch 3"];
+
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("http://localhost:8000/api/students/");
-        const students = Array.isArray(res.data) ? res.data : res.data.results;
+        const api = getApi(); // fresh instance with token
+        const [studentRes, franchiseRes] = await Promise.all([
+          api.get("students/"),
+          api.get("add-franchise/franchise/")
+        ]);
+
+        const students = studentRes.data.map((s) => ({
+          ...s,
+          franchise: s.franchise ? { id: s.franchise.id, name: s.franchise.name } : null,
+        }));
+
         setRows(students);
+        setFranchises(franchiseRes.data);
       } catch (err) {
-        console.error("Failed to fetch students:", err);
-        alert("Error fetching students from backend");
+        console.error("Failed to fetch:", err);
+        alert("Error fetching students/franchises from backend");
       } finally {
         setLoading(false);
       }
     };
-    fetchStudents();
+
+    fetchData();
   }, []);
 
-  const batches = useMemo(() => Array.from(new Set(rows.map((r) => r.batch))), [rows]);
-  const franchises = set_data ? [set_data] : ["Franchise A"];
-
-  // Delete student
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this student?")) return;
     try {
-      await axios.delete(`http://localhost:8000/api/students/${id}/`);
+      const api = getApi(); // fresh instance with token
+      await api.delete(`students/${id}/`);
       setRows((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       console.error("Failed to delete student:", err);
@@ -163,7 +203,7 @@ export default function StudentManagement({ set_data }) {
   const filtered = rows.filter(
     (r) =>
       (batch === "All" || r.batch === batch) &&
-      (franchise === "All" || r.franchise === franchise) &&
+      (franchise === "All" || r.franchise?.id === Number(franchise)) &&
       (status === "All" || r.status === status) &&
       (payment === "All" || (payment === "Paid" ? r.feesPending === 0 : r.feesPending > 0)) &&
       (q === "" || r.name.toLowerCase().includes(q.toLowerCase()) || r.email.toLowerCase().includes(q.toLowerCase()))
@@ -177,16 +217,11 @@ export default function StudentManagement({ set_data }) {
           <div className="ml-auto flex items-center gap-2 w-full max-w-md">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search student by name or email"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="rounded-2xl pl-8"
-              />
+              <Input placeholder="Search student by name or email" value={q} onChange={(e) => setQ(e.target.value)} className="rounded-2xl pl-8" />
             </div>
             <StudentDialog
-              onSave={(s) => setRows((prev) => [s, ...prev])}
-              batches={batches.length ? batches : ["Batch A"]}
+              onSave={(s) => setRows((prev) => [{ ...s, franchise: s.franchise }, ...prev])}
+              batches={batches}
               franchises={franchises}
             />
           </div>
@@ -206,7 +241,6 @@ export default function StudentManagement({ set_data }) {
                     <th>Name</th>
                     <th>Batch</th>
                     <th>Franchise</th>
-                    
                     <th>Fees Paid</th>
                     <th>Pending</th>
                     <th>Status</th>
@@ -225,14 +259,26 @@ export default function StudentManagement({ set_data }) {
                   ) : (
                     filtered.map((r) => (
                       <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50">
-                        <td>{r.name}<br /><span className="text-xs text-gray-500">{r.email}</span></td>
+                        <td>
+                          {r.name}<br />
+                          <span className="text-xs text-gray-500">{r.email}</span>
+                        </td>
                         <td>{r.batch}</td>
-                        <td>{r.franchise}</td>
+                        <td>{r.franchise?.name}</td>
                         <td>{formatINR(r.feesPaid)}</td>
                         <td>{formatINR(r.feesPending)}</td>
                         <td><StatusBadge status={r.status} /></td>
                         <td className="flex gap-2">
-                          <StudentDialog student={r} onSave={(s) => setRows((prev) => prev.map((x) => x.id === s.id ? s : x))} batches={batches} franchises={franchises} />
+                          <StudentDialog
+                            student={r}
+                            onSave={(s) =>
+                              setRows((prev) =>
+                                prev.map((x) => (x.id === s.id ? { ...s, franchise: s.franchise } : x))
+                              )
+                            }
+                            batches={batches}
+                            franchises={franchises}
+                          />
                           <Button variant="destructive" className="flex items-center gap-1" onClick={() => handleDelete(r.id)}>
                             <Trash2 className="h-4 w-4" /> Delete
                           </Button>
