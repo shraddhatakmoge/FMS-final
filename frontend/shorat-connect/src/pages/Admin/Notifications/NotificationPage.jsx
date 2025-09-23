@@ -127,12 +127,14 @@ export const NotificationPage = ({ franchises = [] }) => {
     });
 };
 
-  const onMarkAllRead = () => {
-    fetch(`/api/notifications/mark_all_read/`, { method: "POST" })
-      .then(() => {
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      });
-  };
+ const onMarkAllRead = () => {
+  fetch(`${API_BASE}/mark_all_read/`, { method: "POST" })
+    .then((res) => res.json())
+    .then(() => {
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    });
+};
+
 
   const handleMarkAllAndScroll = () => {
     onMarkAllRead();
