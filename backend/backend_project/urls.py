@@ -28,6 +28,7 @@ urlpatterns = [
 
     # Batches API
     path("api/batches/", include("Franchise.add_batch.urls")),
+    path("api/staff/" ,include("admin1.add_staff.urls")),
 
     # ✅ JWT endpoints
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

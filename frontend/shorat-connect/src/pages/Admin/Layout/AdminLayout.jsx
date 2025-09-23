@@ -4,7 +4,7 @@ import Header from "./Header";
 import { AdminSidebar } from "../Layout/AdminSidebar";
 import { DashboardContent } from "../Dashboard/DashboardContent";
 import FranchiseManagement from "../Franchise/FranchiseManagement";
-import StaffManagement from "../../Franchise/staff/staffmanagement";
+import StaffManagement from "../staff/StaffManagement";
 import { NotificationPage } from "../Notifications/NotificationPage";
 import StudentManagement from "../Student/StudentManagement";
 import CourseManagement from "../course/CourseManagement";

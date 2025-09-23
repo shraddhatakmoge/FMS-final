@@ -5,65 +5,66 @@ from admin1.add_franchise.models import AddFranchise
 from .models import Notification
 from admin1.add_event.models import Event
 
+def get_franchise_instance(franchise):
+    """
+    Ensure franchise is an AddFranchise instance or None.
+    """
+    if isinstance(franchise, AddFranchise):
+        return franchise
+    if isinstance(franchise, str):
+        try:
+            return AddFranchise.objects.get(name=franchise)
+        except AddFranchise.DoesNotExist:
+            return None
+    return None
 
 
-
+# ---------------- Staff Signals ---------------- #
 @receiver(post_save, sender=Staff)
 def staff_saved(sender, instance, created, **kwargs):
-    if created:
-        Notification.objects.create(
-            message=f"Staff '{instance.name}' was added.",
-            franchise=instance.franchise
-        )
-    else:
-        Notification.objects.create(
-            message=f"Staff '{instance.name}' was updated.",
-            franchise=instance.franchise
-        )
+    Notification.objects.create(
+        message=f"Staff '{instance.name}' was {'added' if created else 'updated'}.",
+        franchise=get_franchise_instance(instance.franchise)
+    )
+
 
 @receiver(post_delete, sender=Staff)
 def staff_deleted(sender, instance, **kwargs):
     Notification.objects.create(
         message=f"Staff '{instance.name}' was removed.",
-        franchise=instance.franchise
+        franchise=get_franchise_instance(instance.franchise)
     )
 
 
-
+# ---------------- Franchise Signals ---------------- #
 @receiver(post_save, sender=AddFranchise)
 def franchise_saved(sender, instance, created, **kwargs):
-    if created:
-        Notification.objects.create(
-            message=f"Franchise '{instance.name}' was added."
-        )
-    else:
-        Notification.objects.create(
-            message=f"Franchise '{instance.name}' was updated."
-        )
+    Notification.objects.create(
+        message=f"Franchise '{instance.name}' was {'added' if created else 'updated'}.",
+        franchise=instance
+    )
+
 
 @receiver(post_delete, sender=AddFranchise)
 def franchise_deleted(sender, instance, **kwargs):
     Notification.objects.create(
-        message=f"Franchise '{instance.name}' was removed."
+        message=f"Franchise '{instance.name}' was removed.",
+        franchise=instance
     )
 
+
+# ---------------- Event Signals ---------------- #
 @receiver(post_save, sender=Event)
 def event_saved(sender, instance, created, **kwargs):
-    if created:
-        Notification.objects.create(
-            message=f"Event '{instance.name}' was added.",
-            franchise=instance.franchise if hasattr(instance, "franchise") else None
-        )
-    else:
-        Notification.objects.create(
-            message=f"Event '{instance.name}' was updated.",
-            franchise=instance.franchise if hasattr(instance, "franchise") else None
-        )
+    Notification.objects.create(
+        message=f"Event '{instance.name}' was {'added' if created else 'updated'}.",
+        franchise=get_franchise_instance(getattr(instance, "franchise", None))
+    )
 
 
 @receiver(post_delete, sender=Event)
 def event_deleted(sender, instance, **kwargs):
     Notification.objects.create(
         message=f"Event '{instance.name}' was removed.",
-        franchise=instance.franchise if hasattr(instance, "franchise") else None
+        franchise=get_franchise_instance(getattr(instance, "franchise", None))
     )
