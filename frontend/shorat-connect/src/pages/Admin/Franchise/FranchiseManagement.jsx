@@ -463,13 +463,13 @@ function FranchiseManagement({ setActivePage }) {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-green-600 text-white">
-                Save
-              </Button>
-            </DialogFooter>
+  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+    Cancel
+  </Button>
+  <Button type="submit" className="bg-green-600 text-white">
+    Save
+  </Button>
+</DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
