@@ -5,10 +5,11 @@ from .models import Notification
 from .serializers import NotificationSerializer
 from rest_framework import status
 
+from rest_framework.permissions import AllowAny
+
 from django.shortcuts import get_object_or_404
 @api_view(["GET"])
 @permission_classes([IsAuthenticatedOrReadOnly])
-
 def list_notifications(request):
     qs = Notification.objects.all().order_by("-created_at")
     serializer = NotificationSerializer(qs, many=True)
@@ -17,15 +18,15 @@ def list_notifications(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def mark_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk)
     notification.is_read = True
     notification.save(update_fields=["is_read"])
-    print(f"✅ Notification {pk} marked as read")  # debug
     return Response({"status": "ok", "id": pk, "is_read": notification.is_read})
 
-
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def mark_all_read(request):
     Notification.objects.filter(is_read=False).update(is_read=True)
-    return Response({"status": "success", "message": "All notifications marked as read"})
+    return Response({"status": "success"})
