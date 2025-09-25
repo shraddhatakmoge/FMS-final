@@ -1,22 +1,40 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ✅ Add/Edit Staff Dialog
-const StaffDialog = ({ open, onClose, onSubmit, staffData }) => {
+// ✅ Add/Edit Staff Dialog with debug
+const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     phone: "",
     salary: "",
-    franchise: "Wagholi Pune",
+    franchise: franchises?.[0]?.id || "",
     status: "Active",
   });
 
@@ -25,10 +43,10 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData }) => {
       setFormData({
         name: staffData.name || "",
         email: staffData.email || "",
-        password: "", // leave password empty for edit
+        password: "",
         phone: staffData.phone || "",
         salary: staffData.salary || "",
-        franchise: staffData.franchise || "Wagholi Pune",
+        franchise: staffData.franchise_id || franchises?.[0]?.id || "",
         status: staffData.status || "Active",
       });
     } else {
@@ -38,11 +56,11 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData }) => {
         password: "",
         phone: "",
         salary: "",
-        franchise: "Wagholi Pune",
+        franchise: franchises?.[0]?.id || "",
         status: "Active",
       });
     }
-  }, [staffData]);
+  }, [staffData, franchises]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,24 +75,48 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData }) => {
       }
     }
 
+    // Password is required only for new staff
+    if (!staffData && !formData.password.trim()) {
+      alert("Password is required for new staff");
+      return;
+    }
+
     try {
-      await onSubmit({
+      const payload = {
         ...formData,
-        role: "Staff", // force role as Staff
+        franchise: Number(formData.franchise),  // ✅ send ID, not name
         salary: Number(formData.salary),
+        role: "Staff",
+      };
+
+      // ✅ Debug: log payload before sending
+      console.log("Submitting staff payload:", payload);
+
+      await onSubmit(payload);
+
+      // Reset form after successful submit
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        phone: "",
+        salary: "",
+        franchise: franchises?.[0]?.id || "",
+        status: "Active",
       });
+
       onClose();
     } catch (error) {
+      // Debug: show backend error
+      console.error("Error submitting staff:", error);
       if (error.response) {
-        alert(JSON.stringify(error.response.data, null, 2));
-      } else {
-        console.error(error);
+        alert("Backend error:\n" + JSON.stringify(error.response.data, null, 2));
       }
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
+  return franchises.length > 0 && (
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{staffData ? "Edit Staff" : "Add Staff"}</DialogTitle>
@@ -105,14 +147,17 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData }) => {
           </div>
           <div>
             <Label>Status</Label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2"
-            >
+            <select name="status" value={formData.status} onChange={handleChange} className="w-full border rounded-md p-2">
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div>
+            <Label>Franchise</Label>
+            <select name="franchise" value={formData.franchise} onChange={handleChange} className="w-full border rounded-md p-2">
+              {franchises.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -126,6 +171,7 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData }) => {
   );
 };
 
+
 // ✅ Staff Management Component
 const StaffManagement = () => {
   const [staffList, setStaffList] = useState([]);
@@ -133,45 +179,61 @@ const StaffManagement = () => {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [franchises, setFranchises] = useState([]);
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
+  const token = localStorage.getItem("access_token");
 
-  const fetchStaff = async () => {
-    try {
-      const res = await axios.get("http://localhost:8000/api/staff/");
-      setStaffList(res.data);
-    } catch (error) {
-      console.error("Error fetching staff:", error);
-    }
+  // ✅ Axios config with JWT token
+  const config = {
+    headers: { Authorization: `Bearer ${token}` }
   };
 
+  // Fetch franchises & staff
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [fRes, sRes] = await Promise.all([
+          axios.get("http://localhost:8000/api/add-franchise/franchise/", config),
+          axios.get("http://localhost:8000/api/staff/", config),
+        ]);
+        setFranchises(fRes.data);
+        setStaffList(sRes.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("Failed to fetch data. Are you logged in?");
+      }
+    };
+    fetchData();
+  }, [token]);
+
+  // Add staff
   const handleAddStaff = async (staffData) => {
     try {
-      const res = await axios.post("http://localhost:8000/api/staff/", staffData);
-      setStaffList([...staffList, res.data]);
+      const res = await axios.post("http://localhost:8000/api/staff/", staffData, config);
+      setStaffList((prev) => [...prev, res.data]);
+      return res.data;
     } catch (error) {
       throw error;
     }
   };
 
+  // Update staff
   const handleUpdateStaff = async (staffData) => {
     try {
-      const res = await axios.put(`http://localhost:8000/api/staff/${editingStaff.id}/`, staffData);
-      const updatedList = staffList.map((s) => (s.id === editingStaff.id ? res.data : s));
-      setStaffList(updatedList);
+      const res = await axios.put(`http://localhost:8000/api/staff/${editingStaff.id}/`, staffData, config);
+      setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? res.data : s)));
       setEditingStaff(null);
     } catch (error) {
       throw error;
     }
   };
 
+  // Delete staff
   const handleDeleteStaff = async (staffId) => {
     if (!window.confirm("Are you sure you want to delete this staff?")) return;
     try {
-      await axios.delete(`http://localhost:8000/api/staff/${staffId}/`);
-      setStaffList(staffList.filter((s) => s.id !== staffId));
+      await axios.delete(`http://localhost:8000/api/staff/${staffId}/`, config);
+      setStaffList((prev) => prev.filter((s) => s.id !== staffId));
     } catch (error) {
       console.error(error);
       alert("Failed to delete staff");
@@ -236,20 +298,12 @@ const StaffManagement = () => {
                       {staff.status}
                     </Badge>
                   </td>
-                  <td className="p-2">{staff.franchise}</td>
+                  <td className="p-2">{staff.franchise_name}</td>
                   <td className="p-2 space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => { setEditingStaff(staff); setDialogOpen(true); }}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => { setEditingStaff(staff); setDialogOpen(true); }}>
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteStaff(staff.id)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteStaff(staff.id)}>
                       Delete
                     </Button>
                   </td>
@@ -266,6 +320,7 @@ const StaffManagement = () => {
         onClose={() => setDialogOpen(false)}
         onSubmit={editingStaff ? handleUpdateStaff : handleAddStaff}
         staffData={editingStaff}
+        franchises={franchises}
       />
     </Card>
   );
