@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -6,8 +7,21 @@ from django.utils.dateparse import parse_date
 from admin1.add_franchise.models import AddFranchise
 from .models import Staff, AttendanceRecord
 from .serializers import StaffSerializer, AttendanceRecordSerializer, BulkAttendanceSerializer
+=======
+# add_staff/views.py
+from rest_framework import generics
+from .models import Staff
+from admin1.add_franchise.models import AddFranchise
+from .serializers import StaffSerializer, FranchiseSerializer
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
 
-class StaffViewSet(viewsets.ModelViewSet):
+# Franchise dropdown API
+class FranchiseListAPIView(generics.ListAPIView):
+    queryset = AddFranchise.objects.all()
+    serializer_class = FranchiseSerializer
+
+# Staff API
+class StaffListCreateAPIView(generics.ListCreateAPIView):
     queryset = Staff.objects.all()
     serializer_class = StaffSerializer
     permission_classes = [IsAuthenticated]
@@ -37,17 +51,34 @@ class StaffViewSet(viewsets.ModelViewSet):
                 return qs.filter(franchise=franchise_param)
         return qs
 
-    def destroy(self, request, *args, **kwargs):
-        staff = self.get_object()
-        user = getattr(staff, "user", None)
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from .models import Staff
+from .serializers import StaffSerializer
+from admin1.add_franchise.serializers import FranchiseSerializer
 
-        # Delete the linked user first
-        if user:
-            user.delete()  # deletes email, password, everything in auth_user table
+class StaffListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = StaffSerializer
+    permission_classes = [IsAuthenticated]
 
-        # Delete staff after user
-        staff.delete()
+    def get_queryset(self):
+        user = self.request.user
+        # Franchise head: only see their staff
+        if hasattr(user, "franchise") and user.franchise:
+            return Staff.objects.filter(franchise=user.franchise)
+        # Admin: see all staff
+        return Staff.objects.all()
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        # Franchise head: assign their franchise automatically
+        if hasattr(user, "franchise") and user.franchise:
+            serializer.save(franchise=user.franchise, role="Staff")
+        else:
+            # Admin can specify franchise in POST payload
+            serializer.save(role="Staff")
+
+<<<<<<< HEAD
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -187,3 +218,5 @@ class AttendanceViewSet(viewsets.ViewSet):
         records = AttendanceRecord.objects.filter(franchise_id=fid, date__year=year, date__month=mon)
         data = AttendanceRecordSerializer(records, many=True).data
         return Response(data)
+=======
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f

@@ -1,35 +1,35 @@
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from .models import Course
-from .serializers import CourseSerializer
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from .models import Course
 from .serializers import CourseSerializer
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated]  # Require login
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        else:
-            print("Serializer validation errors:", serializer.errors)  # Debugging
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        user = self.request.user
+        # Admin sees all courses
+        if user.role == "admin":
+            return Course.objects.all()
+        # Franchise head sees all courses (customize filter if needed)
+        if user.role == "franchise_head":
+            return Course.objects.all()
+        # Staff or others see nothing
+        return Course.objects.none()
 
-    # def perform_create(self, serializer):
-    #     instance = serializer.save()
-    #     message = f"A new course has been added: {instance.name}"
-    #     create_notification(message)
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])  # ✅ only logged-in users
-def franchise_courses_list(request):
-    courses = Course.objects.all()
-    serializer = CourseSerializer(courses, many=True)
-    return Response(serializer.data)
+    def perform_create(self, serializer):
+        if self.request.user.role != "admin":
+            raise PermissionDenied("Only admins can add courses.")
+        serializer.save()  # ✅ remove 'created_by'
+
+    def perform_update(self, serializer):
+        if self.request.user.role != "admin":
+            raise PermissionDenied("Only admins can update courses.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if self.request.user.role != "admin":
+            raise PermissionDenied("Only admins can delete courses.")
+        instance.delete()

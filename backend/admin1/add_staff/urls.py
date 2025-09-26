@@ -1,10 +1,11 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import StaffViewSet
+# add_staff/urls.py
+from django.urls import path
+from .views import FranchiseListAPIView, StaffListCreateAPIView
 
-router = DefaultRouter()
-router.register(r'', StaffViewSet, basename='staff')
-
+# add_staff/urls.py
 urlpatterns = [
-    path('', include(router.urls)),
+    
+    path('franchise/', FranchiseListAPIView.as_view(), name='franchise-list'),
+    path('', StaffListCreateAPIView.as_view(), name='staff-list-create'),
 ]
+

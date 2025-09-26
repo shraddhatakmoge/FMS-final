@@ -1,19 +1,77 @@
+# # add_staff/serializers.py
+# from rest_framework import serializers
+# from .models import Staff
+# from admin1.add_franchise.models import AddFranchise
+
+# # Serializer for Franchise dropdown
+# class FranchiseSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = AddFranchise
+#         fields = ['id', 'name']
+
+# # Serializer for Staff
+# class StaffSerializer(serializers.ModelSerializer):
+#     # Include franchise name for frontend display
+#     franchise_name = serializers.CharField(source='franchise.name', read_only=True)
+
+#     class Meta:
+#         model = Staff
+#         fields = [
+#             'id',
+#             'name',
+#             'role',
+#             'franchise',      # ID of franchise (for POST/PUT)
+#             'franchise_name', # read-only for table display
+#             'phone',
+#             'salary',
+#             'status',
+#         ]
+    
+import threading
 from django.core.mail import send_mail
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+<<<<<<< HEAD
 from .models import Staff, AttendanceRecord
 from Franchise.add_student.models import Student
 from admin1.add_franchise.models import AddFranchise
+=======
+from .models import Staff
+from admin1.add_franchise.models import AddFranchise  
+from admin1.add_franchise.serializers import FranchiseSerializer
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
 
 User = get_user_model()
 
+# Background email sender
+def send_staff_welcome_email(email, staff_name, password):
+    try:
+        send_mail(
+            subject="Franchise Management System Login",
+            message=(
+                f"Hello {staff_name},\n\n"
+                f"Your login details for Franchise Management System:\n"
+                f"Email: {email}\n"
+                f"Password: {password}\n\n"
+                f"Please change your password after first login."
+            ),
+            from_email="shraddhatakmoge@gmail.com",
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print("Failed to send staff email:", e)
+
+# Serializer for Staff
 class StaffSerializer(serializers.ModelSerializer):
+    franchise_name = serializers.CharField(source="franchise.name", read_only=True)
     email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)
     franchise_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Staff
+<<<<<<< HEAD
         fields = ['id', 'name', 'email', 'password', 'franchise', 'franchise_id', 'phone', 'salary', 'status', 'batch']
 
     def create(self, validated_data):
@@ -33,36 +91,46 @@ class StaffSerializer(serializers.ModelSerializer):
             validated_data['franchise_fk'] = fran
 
         # Check if user exists
-        if User.objects.filter(email=email).exists():
-            raise serializers.ValidationError({'email': 'A user with this email already exists.'})
+=======
+        fields = [
+            "id",
+            "name",
+            "role",
+            "franchise",
+            "franchise_name",
+            "phone",
+            "salary",
+            "status",
+            "email",
+            "password",
+        ]
 
-        # Create User with role='staff'
+    def create(self, validated_data):
+        email = validated_data.pop("email")
+        password = validated_data.pop("password")
+        name = validated_data.get("name")
+        franchise = validated_data.get("franchise")
+
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"email": "This email is already registered."})
+
+        # 1️⃣ Create User
         user = User.objects.create_user(
-            username=email,
+            username=email.split("@")[0],
             email=email,
             password=password,
-            role='staff'
+            role="staff"  # adjust if you have a role field
         )
 
-        staff = Staff.objects.create(user=user, **validated_data)
+        # 2️⃣ Create Staff record
+        staff = Staff.objects.create(**validated_data)
 
-        # ✅ Send email
-        subject = "Welcome to the Team!"
-        message = f"""
-Hello {staff.name},
-
-You have been added as a staff member.
-
-Your login details:
-Email: {email}
-Password: {password}
-
-Please login and change your password after first login.
-
-Thanks,
-Your Company
-"""
-        send_mail(subject, message, None, [email], fail_silently=False)
+        # 3️⃣ Send email in background
+        threading.Thread(
+            target=send_staff_welcome_email,
+            args=(email, name, password)
+        ).start()
 
         return staff
 

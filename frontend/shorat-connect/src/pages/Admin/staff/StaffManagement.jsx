@@ -1,14 +1,35 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ✅ Add/Edit Staff Dialog
+<<<<<<< HEAD
+=======
+// ✅ Add/Edit Staff Dialog with debug
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
 const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -16,8 +37,12 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
     password: "",
     phone: "",
     salary: "",
+<<<<<<< HEAD
     franchise: "Wagholi Pune", // legacy display
     franchise_id: "",          // used for backend
+=======
+    franchise: franchises?.[0]?.id || "",
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
     status: "Active",
   });
 
@@ -26,15 +51,19 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
       setFormData({
         name: staffData.name || "",
         email: staffData.email || "",
-        password: "", // leave password empty for edit
+        password: "",
         phone: staffData.phone || "",
         salary: staffData.salary || "",
+<<<<<<< HEAD
         franchise: staffData.franchise || "Wagholi Pune",
         franchise_id: (() => {
           // Try to resolve current franchise name to id
           const match = Array.isArray(franchises) ? franchises.find(f => (f.name||"") === (staffData.franchise||"")) : null;
           return match ? String(match.id) : "";
         })(),
+=======
+        franchise: staffData.franchise_id || franchises?.[0]?.id || "",
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
         status: staffData.status || "Active",
       });
     } else {
@@ -44,8 +73,12 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
         password: "",
         phone: "",
         salary: "",
+<<<<<<< HEAD
         franchise: "Wagholi Pune",
         franchise_id: "",
+=======
+        franchise: franchises?.[0]?.id || "",
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
         status: "Active",
       });
     }
@@ -68,26 +101,53 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
       return;
     }
 
+    // Password is required only for new staff
+    if (!staffData && !formData.password.trim()) {
+      alert("Password is required for new staff");
+      return;
+    }
+
     try {
-      await onSubmit({
+      const payload = {
         ...formData,
-        role: "Staff", // force role as Staff
+        franchise: Number(formData.franchise),  // ✅ send ID, not name
         salary: Number(formData.salary),
+<<<<<<< HEAD
         // ensure franchise_id is numeric when provided
         franchise_id: formData.franchise_id ? Number(formData.franchise_id) : undefined,
+=======
+        role: "Staff",
+      };
+
+      // ✅ Debug: log payload before sending
+      console.log("Submitting staff payload:", payload);
+
+      await onSubmit(payload);
+
+      // Reset form after successful submit
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        phone: "",
+        salary: "",
+        franchise: franchises?.[0]?.id || "",
+        status: "Active",
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
       });
+
       onClose();
     } catch (error) {
+      // Debug: show backend error
+      console.error("Error submitting staff:", error);
       if (error.response) {
-        alert(JSON.stringify(error.response.data, null, 2));
-      } else {
-        console.error(error);
+        alert("Backend error:\n" + JSON.stringify(error.response.data, null, 2));
       }
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
+  return franchises.length > 0 && (
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{staffData ? "Edit Staff" : "Add Staff"}</DialogTitle>
@@ -132,14 +192,17 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
           </div>
           <div>
             <Label>Status</Label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2"
-            >
+            <select name="status" value={formData.status} onChange={handleChange} className="w-full border rounded-md p-2">
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div>
+            <Label>Franchise</Label>
+            <select name="franchise" value={formData.franchise} onChange={handleChange} className="w-full border rounded-md p-2">
+              {franchises.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -153,6 +216,7 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
   );
 };
 
+
 // ✅ Staff Management Component
 const StaffManagement = () => {
   const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
@@ -162,7 +226,9 @@ const StaffManagement = () => {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [franchises, setFranchises] = useState([]);
 
+<<<<<<< HEAD
   useEffect(() => {
     fetchStaff();
     fetchFranchises();
@@ -201,28 +267,69 @@ const StaffManagement = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setStaffList([...staffList, res.data]);
+=======
+  const token = localStorage.getItem("access_token");
+
+  // ✅ Axios config with JWT token
+  const config = {
+    headers: { Authorization: `Bearer ${token}` }
+  };
+
+  // Fetch franchises & staff
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [fRes, sRes] = await Promise.all([
+          axios.get("http://localhost:8000/api/add-franchise/franchise/", config),
+          axios.get("http://localhost:8000/api/staff/", config),
+        ]);
+        setFranchises(fRes.data);
+        setStaffList(sRes.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("Failed to fetch data. Are you logged in?");
+      }
+    };
+    fetchData();
+  }, [token]);
+
+  // Add staff
+  const handleAddStaff = async (staffData) => {
+    try {
+      const res = await axios.post("http://localhost:8000/api/staff/", staffData, config);
+      setStaffList((prev) => [...prev, res.data]);
+      return res.data;
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
     } catch (error) {
       throw error;
     }
   };
 
+  // Update staff
   const handleUpdateStaff = async (staffData) => {
     try {
+<<<<<<< HEAD
       const token = localStorage.getItem("access_token") || localStorage.getItem("token");
       const res = await axios.put(`${API_BASE}/api/staff/${editingStaff.id}/`, staffData, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const updatedList = staffList.map((s) => (s.id === editingStaff.id ? res.data : s));
       setStaffList(updatedList);
+=======
+      const res = await axios.put(`http://localhost:8000/api/staff/${editingStaff.id}/`, staffData, config);
+      setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? res.data : s)));
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
       setEditingStaff(null);
     } catch (error) {
       throw error;
     }
   };
 
+  // Delete staff
   const handleDeleteStaff = async (staffId) => {
     if (!window.confirm("Are you sure you want to delete this staff?")) return;
     try {
+<<<<<<< HEAD
       const token = localStorage.getItem("access_token") || localStorage.getItem("token");
       const res = await axios.delete(`${API_BASE}/api/staff/${staffId}/`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -234,6 +341,10 @@ const StaffManagement = () => {
         // Fallback: optimistic update
         setStaffList((prev) => prev.filter((s) => s.id !== staffId));
       }
+=======
+      await axios.delete(`http://localhost:8000/api/staff/${staffId}/`, config);
+      setStaffList((prev) => prev.filter((s) => s.id !== staffId));
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
     } catch (error) {
       console.error(error);
       const msg = error?.response?.data ? JSON.stringify(error.response.data) : error.message;
@@ -299,20 +410,12 @@ const StaffManagement = () => {
                       {staff.status}
                     </Badge>
                   </td>
-                  <td className="p-2">{staff.franchise}</td>
+                  <td className="p-2">{staff.franchise_name}</td>
                   <td className="p-2 space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => { setEditingStaff(staff); setDialogOpen(true); }}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => { setEditingStaff(staff); setDialogOpen(true); }}>
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteStaff(staff.id)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteStaff(staff.id)}>
                       Delete
                     </Button>
                   </td>

@@ -1,4 +1,6 @@
+# add_staff/models.py
 from django.db import models
+<<<<<<< HEAD
 from django.conf import settings
 from admin1.add_franchise.models import AddFranchise
 
@@ -50,3 +52,25 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.person_type}:{self.person_id} ({self.franchise_id})"
+=======
+
+class Staff(models.Model):
+    STATUS_CHOICES = [
+        ('Active', 'Active'),
+        ('Inactive', 'Inactive'),
+    ]
+
+    name = models.CharField(max_length=100)
+    role = models.CharField(max_length=50)
+    franchise = models.ForeignKey(
+        'add_franchise.AddFranchise',  # <-- use app_label.ModelName as string
+        on_delete=models.CASCADE,
+        related_name='staff'
+    )
+    phone = models.CharField(max_length=15)
+    salary = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Active')
+
+    def __str__(self):
+        return f"{self.name} ({self.role})"
+>>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
