@@ -58,6 +58,29 @@ export const LoginForm = ({ onLogin }) => {
         localStorage.setItem("branch", data.branch || "");
         localStorage.setItem("email", email);
 
+        // 🔁 Resolve and persist franchise_id for franchise heads (used by Attendance System)
+        try {
+          const resolvedRole = data.role || role;
+          const branchName = data.branch || "";
+          if (resolvedRole === "franchise_head" && branchName) {
+            const apiBase = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+            const frRes = await fetch(`${apiBase}/api/franchises/`, {
+              headers: { Authorization: `Bearer ${data.access}` }
+            });
+            if (frRes.ok) {
+              const frList = await frRes.json();
+              const list = Array.isArray(frList) ? frList : [];
+              const match = list.find(f => (f.name || "").toLowerCase() === branchName.toLowerCase());
+              if (match && match.id) {
+                localStorage.setItem("franchise_id", String(match.id));
+              }
+            }
+          }
+        } catch (e) {
+          // Non-fatal: AttendanceSystem can still resolve later
+          console.warn("Franchise ID resolve on login failed:", e);
+        }
+
         toast({
           title: "Login Successful",
           description: data.message || "You are now logged in",

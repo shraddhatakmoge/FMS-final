@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { getApi } from "@/utils/api";
 
 const AttendanceSystem = () => {
-  const [activeType, setActiveType] = useState("student"); // student or staff
+  // Admin page: STAFF attendance only
   const [students, setStudents] = useState([]);
   const [staff, setStaff] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [branchFilter, setBranchFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
+  const [franchises, setFranchises] = useState([]);
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState("");
   const [date, setDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -42,12 +45,32 @@ const AttendanceSystem = () => {
 
     setStudents(fetchedStudents);
     setStaff(fetchedStaff);
-    setBranchFilter(fetchedStudents.length > 0 ? fetchedStudents[0].branch : "");
+    // Also fetch franchises from backend for real branch tabs
+    (async () => {
+      try {
+        const api = getApi();
+        const res = await api.get("franchises/");
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+        setFranchises(list);
+        if (list.length > 0) {
+          // default to the first franchise
+          const first = list[0];
+          setBranchFilter(first.name || "");
+          setSelectedFranchiseId(String(first.id || ""));
+        }
+      } catch (e) {
+        setFranchises([]);
+      }
+    })();
   }, []);
 
   const branches = useMemo(() => {
+    // Prefer backend franchises if available; fallback to local mock branches
+    if (Array.isArray(franchises) && franchises.length) {
+      return franchises.map(f => f.name).filter(Boolean);
+    }
     return [...new Set([...students.map(s => s.branch), ...staff.map(st => st.branch)])];
-  }, [students, staff]);
+  }, [franchises, students, staff]);
 
   const coursesForBranch = useMemo(() => {
     return [...new Set(students.filter(s => s.branch === branchFilter).map(s => s.course))];
@@ -62,8 +85,8 @@ const AttendanceSystem = () => {
       const branchMatch = !branchFilter || s.branch === branchFilter;
       const courseMatch = !courseFilter || s.course === courseFilter;
       const searchMatch =
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.rollNo.toLowerCase().includes(search.toLowerCase());
+        s.name?.toLowerCase().includes(search.toLowerCase()) ||
+        s.rollNo?.toLowerCase().includes(search.toLowerCase());
       return branchMatch && courseMatch && searchMatch;
     });
   }, [students, branchFilter, courseFilter, search]);
@@ -73,11 +96,56 @@ const AttendanceSystem = () => {
       const branchMatch = !branchFilter || st.branch === branchFilter;
       const deptMatch = !deptFilter || st.department === deptFilter;
       const searchMatch =
-        st.name.toLowerCase().includes(search.toLowerCase()) ||
-        st.staffId.toLowerCase().includes(search.toLowerCase());
+        st.name?.toLowerCase().includes(search.toLowerCase()) ||
+        st.staffId?.toLowerCase().includes(search.toLowerCase());
       return branchMatch && deptMatch && searchMatch;
     });
   }, [staff, branchFilter, deptFilter, search]);
+
+  // Fetch staff list for selected franchise from backend
+  useEffect(() => {
+    if (!selectedFranchiseId) return;
+    (async () => {
+      try {
+        const api = getApi();
+        const res = await api.get("staff/", { params: { franchise: selectedFranchiseId } });
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.results) ? res.data.results : []);
+        // Normalize to expected fields for this UI
+        const normalized = list.map(it => ({
+          id: it.id,
+          name: it.name || it.full_name || it.username || "",
+          staffId: it.staffId || it.staff_id || String(it.id),
+          department: it.department || it.role || "",
+          branch: it.franchise || it.branch || branchFilter,
+        }));
+        setStaff(normalized);
+      } catch (e) {
+        setStaff([]);
+      }
+    })();
+  }, [selectedFranchiseId, branchFilter]);
+
+  // Fetch attendance records for selected franchise and date
+  useEffect(() => {
+    if (!selectedFranchiseId || !date) return;
+    (async () => {
+      try {
+        const api = getApi();
+        const res = await api.get("attendance/", { params: { franchise: selectedFranchiseId, date } });
+        const raw = Array.isArray(res.data) ? res.data : [];
+        setAttendanceRecords(raw);
+      } catch (e) {
+        setAttendanceRecords([]);
+      }
+    })();
+  }, [selectedFranchiseId, date]);
+
+  // Map attendance (person_id) to staff directory for display fields
+  const staffById = useMemo(() => {
+    const map = new Map();
+    staff.forEach(s => map.set(Number(s.id), s));
+    return map;
+  }, [staff]);
 
   const handleSaveAttendance = () => {
     const selectedList = activeType === "student" ? filteredStudents : filteredStaff;
@@ -131,13 +199,22 @@ const AttendanceSystem = () => {
   };
 
   const viewRecords = useMemo(() => {
-    const typeMatch = activeType === "student" ? "Student" : "Staff";
-    return attendanceRecords.filter(r =>
-      r.type === typeMatch &&
-      (!branchFilter || r.branch === branchFilter) &&
-      (!date || r.date === date)
-    );
-  }, [attendanceRecords, activeType, branchFilter, date]);
+    // Attendance API returns AttendanceRecord entries; build display rows for staff only
+    const rows = (attendanceRecords || [])
+      .filter(r => r.person_type === "staff" && (!date || r.date === date))
+      .map(r => {
+        const s = staffById.get(Number(r.person_id)) || {};
+        return {
+          date: r.date,
+          name: s.name || "",
+          staffId: s.staffId || String(r.person_id),
+          department: s.department || "",
+          status: r.status,
+          branch: s.branch || branchFilter,
+        };
+      });
+    return rows.filter(row => !branchFilter || row.branch === branchFilter);
+  }, [attendanceRecords, staffById, branchFilter, date]);
 
   const summary = useMemo(() => {
     const initial = { Present: 0, Absent: 0, Late: 0, Excused: 0 };
@@ -159,10 +236,9 @@ const AttendanceSystem = () => {
   }, [date]);
 
   const weeklySeries = useMemo(() => {
-    const typeMatch = activeType === "student" ? "Student" : "Staff";
     return last7Days.map(d => {
       const dayRecs = attendanceRecords.filter(r =>
-        r.type === typeMatch &&
+        r.type === "Staff" &&
         (!branchFilter || r.branch === branchFilter) &&
         r.date === d
       );
@@ -171,30 +247,15 @@ const AttendanceSystem = () => {
       const pct = total ? Math.round((present / total) * 100) : 0;
       return { date: d, pct, present, total };
     });
-  }, [attendanceRecords, activeType, branchFilter, last7Days]);
+  }, [attendanceRecords, branchFilter, last7Days]);
 
   return (
     <div className="p-4 sm:p-6">
-      {/* Toggle Student/Staff */}
+      {/* Staff Attendance (admin) */}
       <div className="flex gap-4 mb-4">
-        {["student", "staff"].map(type => (
-          <button
-            key={type}
-            onClick={() => {
-              setActiveType(type);
-              setSearch("");
-              setCourseFilter("");
-              setDeptFilter("");
-            }}
-            className={`px-4 py-2 rounded font-medium ${
-              activeType === type
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            }`}
-          >
-            {type === "student" ? "Student Attendance" : "Staff Attendance"}
-          </button>
-        ))}
+        <button className="px-4 py-2 rounded font-medium bg-blue-500 text-white" disabled>
+          Staff Attendance
+        </button>
       </div>
 
       {/* Branch Tabs */}
@@ -202,7 +263,11 @@ const AttendanceSystem = () => {
         {branches.map(branch => (
           <button
             key={branch}
-            onClick={() => setBranchFilter(branch)}
+            onClick={() => {
+              setBranchFilter(branch);
+              const found = franchises.find(f => f.name === branch);
+              setSelectedFranchiseId(found ? String(found.id) : "");
+            }}
             className={`px-4 py-2 rounded font-medium ${
               branchFilter === branch
                 ? "bg-red-500 text-white"
@@ -214,32 +279,8 @@ const AttendanceSystem = () => {
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Filters (department only for staff) */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        {activeType === "student" ? (
-          <select
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-            className="border px-3 py-2 rounded w-full sm:w-1/3"
-          >
-            <option value="">All Courses</option>
-            {coursesForBranch.map((course, i) => (
-              <option key={i} value={course}>{course}</option>
-            ))}
-          </select>
-        ) : (
-          <select
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="border px-3 py-2 rounded w-full sm:w-1/3"
-          >
-            <option value="">All Departments</option>
-            {deptsForBranch.map((dept, i) => (
-              <option key={i} value={dept}>{dept}</option>
-            ))}
-          </select>
-        )}
-
         <input
           type="date"
           className="border px-3 py-2 rounded w-full sm:w-1/3"
@@ -248,7 +289,7 @@ const AttendanceSystem = () => {
         />
         <input
           type="text"
-          placeholder={`Search ${activeType === "student" ? "student" : "staff"}...`}
+          placeholder="Search staff..."
           className="border px-3 py-2 rounded w-full sm:w-1/3"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -299,24 +340,15 @@ const AttendanceSystem = () => {
         </div>
       </div>
 
-      {/* Attendance Table */}
+      {/* Attendance Table (staff only) */}
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse border border-gray-200 text-sm sm:text-base">
           <thead>
             <tr className="bg-gray-100">
               <th className="border px-4 py-2">Date</th>
               <th className="border px-4 py-2">Name</th>
-              {activeType === "student" ? (
-                <>
-                  <th className="border px-4 py-2">Roll No</th>
-                  <th className="border px-4 py-2">Course</th>
-                </>
-              ) : (
-                <>
-                  <th className="border px-4 py-2">Staff ID</th>
-                  <th className="border px-4 py-2">Department</th>
-                </>
-              )}
+              <th className="border px-4 py-2">Staff ID</th>
+              <th className="border px-4 py-2">Department</th>
               <th className="border px-4 py-2">Status</th>
             </tr>
           </thead>
@@ -326,17 +358,8 @@ const AttendanceSystem = () => {
                 <tr key={i} className="text-center">
                   <td className="border px-4 py-2">{rec.date}</td>
                   <td className="border px-4 py-2">{rec.name}</td>
-                  {activeType === "student" ? (
-                    <>
-                      <td className="border px-4 py-2">{rec.rollNo}</td>
-                      <td className="border px-4 py-2">{rec.course}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="border px-4 py-2">{rec.staffId}</td>
-                      <td className="border px-4 py-2">{rec.department}</td>
-                    </>
-                  )}
+                  <td className="border px-4 py-2">{rec.staffId}</td>
+                  <td className="border px-4 py-2">{rec.department}</td>
                   <td
                     className={`border px-4 py-2 font-medium ${
                       rec.status === "Present"

@@ -43,7 +43,7 @@ class FranchiseSerializer(serializers.ModelSerializer):
             username=name,
             email=email,
             password=password,
-            role=getattr(User, 'role', 'franchise_head')  # fallback if no role field
+            role='franchise_head'  # fallback if no role field
         )
 
         franchise = AddFranchise.objects.create(

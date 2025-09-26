@@ -41,6 +41,7 @@ const App = () => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
     const email = localStorage.getItem("email");
+    const branch = localStorage.getItem("branch");
     const expiry = localStorage.getItem("expiry");
 
     if (token && role && email && expiry && Date.now() < +expiry) {
@@ -49,6 +50,7 @@ const App = () => {
         role,
         email,
         token,
+        branch,
       });
       setIsAuthenticated(true);
     } else {
@@ -70,18 +72,20 @@ const App = () => {
   }, [isAuthenticated, user]);
 
   const handleLoginSuccess = (credentials) => {
-    const { token, role, email } = credentials;
+    const { token, role, email, branch } = credentials;
 
     const userData = {
       name: getRoleDisplayName(role),
       role,
       email,
       token,
+      branch,
     };
 
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
     localStorage.setItem("email", email);
+    if (branch !== undefined) localStorage.setItem("branch", branch || "");
     localStorage.setItem("expiry", Date.now() + 1000 * 60 * 60); // 1 hour
 
     setUser(userData);

@@ -29,7 +29,6 @@ export const StaffSidebar = ({
     },
     { icon: GraduationCap, label: "My Students" },
     { icon: Calendar, label: "My Batches" },
-    { icon: ClipboardCheck, label: "Attendance" },
     { icon: TrendingUp, label: "Student Progress" },
     { icon: MessageSquare, label: "Chat" },
   ];

@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from admin1.add_franchise.views import franchises_list
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -13,6 +14,8 @@ urlpatterns = [
 
     # Franchise API
     path("api/add-franchise/", include("admin1.add_franchise.urls")),
+    # Alias expected by frontend: list franchises as id+name
+    path("api/franchises/", franchises_list),
 
     # Events API
     path("api/events/", include("admin1.add_event.urls")),
@@ -29,6 +32,8 @@ urlpatterns = [
     # Batches API
     path("api/batches/", include("Franchise.add_batch.urls")),
     path("api/staff/" ,include("admin1.add_staff.urls")),
+    # Attendance API
+    path("api/attendance/", include("admin1.add_staff.attendance_urls")),
 
     # ✅ JWT endpoints
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

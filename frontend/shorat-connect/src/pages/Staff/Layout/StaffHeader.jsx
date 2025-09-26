@@ -36,7 +36,7 @@ export const StaffHeader = ({
 
           {/* Franchise Panel Title (Red background) */}
           <div className="bg-red-600 text-white px-3 py-1 rounded-lg font-bold text-sm md:text-lg truncate">
-            Staff Panel
+            Franchise Panel
           </div>
         </div>
 

@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Student
 from .serializers import StudentSerializer
+from admin1.add_franchise.models import AddFranchise
+from admin1.add_staff.models import Staff
 
 class StudentViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSerializer
@@ -18,10 +20,19 @@ class StudentViewSet(viewsets.ModelViewSet):
         if getattr(user, "role", None) == "admin":
             return Student.objects.all().order_by("-created_at")
 
-        # Franchise head or staff
+        # Franchise head
         franchise = getattr(user, "franchise", None)
-        if franchise:
+        if getattr(user, "role", None) == "franchise_head" and franchise:
             return Student.objects.filter(franchise=franchise).order_by("-created_at")
+
+        # Staff: scope by their franchise and batch
+        if getattr(user, "role", None) == "staff":
+            staff = Staff.objects.filter(user=user).select_related("franchise_fk").first()
+            if staff and staff.franchise_fk:
+                qs = Student.objects.filter(franchise=staff.franchise_fk)
+                if getattr(staff, "batch", None):
+                    qs = qs.filter(batch=staff.batch)
+                return qs.order_by("-created_at")
 
         # Default empty queryset
         return Student.objects.none()

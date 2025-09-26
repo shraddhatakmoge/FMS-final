@@ -146,13 +146,19 @@ function FranchiseManagement({ setActivePage }) {
     if (window.confirm("Are you sure you want to delete this franchise?")) {
       try {
         const api = getApi();
-        await api.delete(`add-franchise/franchise/${id}/`);
-        setFranchises((prev) => prev.filter((f) => f.id !== id));
-        if (selectedFranchise?.id === id) {
-          setSelectedFranchise(null);
+        const res = await api.delete(`add-franchise/franchise/${id}/`);
+        if (res.status === 204) {
+          // safest: fetch from server to avoid stale UI
+          await fetchFranchises();
+        } else {
+          // fallback optimistic update
+          setFranchises((prev) => prev.filter((f) => f.id !== id));
         }
+        if (selectedFranchise?.id === id) setSelectedFranchise(null);
       } catch (err) {
         console.error("Delete error:", err);
+        const msg = err?.response?.data ? JSON.stringify(err.response.data) : err.message;
+        alert(`Failed to delete franchise: ${msg}`);
       }
     }
   };

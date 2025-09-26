@@ -1,364 +1,432 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+
+// unified token getter to support multiple possible storage keys
+const getToken = () => {
+  const keys = ["access_token", "token", "access", "authToken"];
+  for (const k of keys) {
+    const v = localStorage.getItem(k);
+    if (v && String(v).trim() !== "") return v;
+  }
+  return null;
+};
+
+// helper with timeout
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    // Attach Authorization header if present
+    const token = getToken();
+    const res = await fetch(url, {
+      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) },
+      ...options,
+      signal: controller.signal,
+    });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+};
 
 const AttendanceSystem = () => {
-  const [activeType, setActiveType] = useState("student"); // student or staff
-  const [students, setStudents] = useState([]);
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState("");
+  const [resolvedBranchId, setResolvedBranchId] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [staff, setStaff] = useState([]);
-  const [attendanceRecords, setAttendanceRecords] = useState([]);
-  const [branchFilter, setBranchFilter] = useState("");
-  const [courseFilter, setCourseFilter] = useState("");
-  const [deptFilter, setDeptFilter] = useState("");
-  const [date, setDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split("T")[0];
-  });
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [attendanceStatus, setAttendanceStatus] = useState({});
-  const [manualIds, setManualIds] = useState({});
-  const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState({
-    idInput: "",
-    name: "",
-    course: "",
-    department: "",
-    status: "",
-    date: "",
-  });
-  const [formError, setFormError] = useState("");
+  const [status, setStatus] = useState({});
+  const [inTime, setInTime] = useState({});
+  const [outTime, setOutTime] = useState({});
+  const [records, setRecords] = useState([]);
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0,7));
+  const [monthlyRecords, setMonthlyRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [lastCount, setLastCount] = useState(0);
+  const role = localStorage.getItem("role");
+  const branchName = localStorage.getItem("branch");
+  const storedFranchiseId = localStorage.getItem("franchise_id") || localStorage.getItem("franchiseId") || localStorage.getItem("franchise");
+  const urlParams = new URLSearchParams(window.location.search || "");
+  const urlFranchiseId = urlParams.get("franchise") || urlParams.get("franchise_id") || urlParams.get("branch") || "";
+
+  // Try to derive franchise id from staff list
+  const deriveFranchiseId = (list) => {
+    if (!Array.isArray(list) || list.length === 0) return null;
+    const item = list[0] || {};
+    const candidates = [
+      item.franchise_id,
+      item.franchiseId,
+      item.franchise,
+      item.branch_id,
+      item.branchId,
+      item.branch,
+      // nested objects
+      (item.franchise && typeof item.franchise === "object" ? item.franchise.id : undefined),
+      (item.branch && typeof item.branch === "object" ? item.branch.id : undefined),
+    ].filter(v => v !== undefined && v !== null && String(v).trim() !== "");
+    if (candidates.length > 0) {
+      const n = Number(candidates[0]);
+      return Number.isNaN(n) ? null : n;
+    }
+    return null;
+  };
+
+  // Resolve branch id from multiple sources without relying on async state
+  const resolveBranchId = () => {
+    if (branchId) return String(branchId);
+    // For franchise heads, do NOT honor URL overrides to avoid cross-branch access attempts
+    if (role !== "franchise_head" && urlFranchiseId && !Number.isNaN(Number(urlFranchiseId))) {
+      return String(Number(urlFranchiseId));
+    }
+    if (resolvedBranchId) return String(resolvedBranchId);
+    if (storedFranchiseId && !Number.isNaN(Number(storedFranchiseId))) {
+      return String(Number(storedFranchiseId));
+    }
+    const derived = deriveFranchiseId(staff);
+    if (derived) return String(derived);
+    if (branchName && Array.isArray(branches) && branches.length) {
+      const match = branches.find(b => (b.name || "").toLowerCase() === branchName.toLowerCase());
+      if (match) return String(match.id);
+    }
+    return null;
+  };
 
   useEffect(() => {
-    const fetchedStudents = [
-      { id: 1, name: "Rohit Sharma", rollNo: "001", course: "Java Full Stack", branch: "Wagholi Pune" },
-      { id: 2, name: "Priya Singh", rollNo: "002", course: "Java Full Stack", branch: "Wagholi Pune" },
-      { id: 3, name: "Aman Verma", rollNo: "003", course: "Web Development", branch: "Wagholi Pune" },
-      { id: 4, name: "Sneha Patil", rollNo: "004", course: "Python Full Stack", branch: "Ahilya Nagar" },
-    ];
-    const fetchedStaff = [
-      { id: 101, name: "Anil Kumar", staffId: "S001", department: "Teaching", branch: "Wagholi Pune" },
-      { id: 102, name: "Meera Joshi", staffId: "S002", department: "Admin", branch: "Wagholi Pune" },
-      { id: 103, name: "Karan Patel", staffId: "S003", department: "Teaching", branch: "Ahilya Nagar" },
-    ];
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        // Require auth token
+        const token = getToken();
+        if (!token) {
+          setLoading(false);
+          setError("Session expired. Please log in again.");
+          return;
+        }
+        // If URL provides franchise id, persist it immediately
+        if (urlFranchiseId && !Number.isNaN(Number(urlFranchiseId))) {
+          setBranchId(String(Number(urlFranchiseId)));
+          try { localStorage.setItem("franchise_id", String(Number(urlFranchiseId))); } catch {}
+        }
+        // Try primary endpoint (authorized)
+        let list = [];
+        try {
+          const res = await fetchWithTimeout(`${API_BASE}/api/franchises/`, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const data = await res.json();
+            list = Array.isArray(data) ? data : (Array.isArray(data?.results) ? data.results : []);
+          }
+        } catch {}
+        setBranches(Array.isArray(list) ? list : []);
 
-    setStudents(fetchedStudents);
-    setStaff(fetchedStaff);
-    setBranchFilter(fetchedStudents.length > 0 ? fetchedStudents[0].branch : "");
-  }, []);
-
-  const branches = useMemo(() => {
-    return [...new Set([...students.map(s => s.branch), ...staff.map(st => st.branch)])];
-  }, [students, staff]);
-
-  const coursesForBranch = useMemo(() => {
-    return [...new Set(students.filter(s => s.branch === branchFilter).map(s => s.course))];
-  }, [students, branchFilter]);
-
-  const deptsForBranch = useMemo(() => {
-    return [...new Set(staff.filter(s => s.branch === branchFilter).map(s => s.department))];
-  }, [staff, branchFilter]);
-
-  const filteredStudents = useMemo(() => {
-    return students.filter(s => {
-      const branchMatch = !branchFilter || s.branch === branchFilter;
-      const courseMatch = !courseFilter || s.course === courseFilter;
-      const searchMatch =
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.rollNo.toLowerCase().includes(search.toLowerCase());
-      return branchMatch && courseMatch && searchMatch;
-    });
-  }, [students, branchFilter, courseFilter, search]);
-
-  const filteredStaff = useMemo(() => {
-    return staff.filter(st => {
-      const branchMatch = !branchFilter || st.branch === branchFilter;
-      const deptMatch = !deptFilter || st.department === deptFilter;
-      const searchMatch =
-        st.name.toLowerCase().includes(search.toLowerCase()) ||
-        st.staffId.toLowerCase().includes(search.toLowerCase());
-      return branchMatch && deptMatch && searchMatch;
-    });
-  }, [staff, branchFilter, deptFilter, search]);
-
-  const handleSaveAttendance = () => {
-    const selectedList = activeType === "student" ? filteredStudents : filteredStaff;
-    const records = selectedList.map(person => ({
-      type: activeType === "student" ? "Student" : "Staff",
-      id: person.id,
-      name: person.name,
-      rollNo: person.rollNo,
-      staffId: person.staffId,
-      course: person.course,
-      department: person.department,
-      branch: person.branch,
-      date,
-      status: attendanceStatus[person.id] || "Absent",
-    }));
-
-    const newRecords = records.filter(rec =>
-      !attendanceRecords.some(existing =>
-        existing.id === rec.id &&
-        existing.date === rec.date &&
-        existing.type === rec.type
-      )
-    );
-
-    if (newRecords.length === 0) {
-      alert("No new records to add (duplicates removed).");
-      setShowModal(false);
-      return;
-    }
-
-    setAttendanceRecords(prev => [...prev, ...newRecords]);
-    setShowModal(false);
-    setAttendanceStatus({});
-    setManualIds({});
-  };
-
-  const handleManualIdChange = (personId, value) => {
-    setManualIds(prev => ({ ...prev, [personId]: value }));
-
-    if (activeType === "student") {
-      const found = students.find(s => s.rollNo.toLowerCase() === value.toLowerCase());
-      if (found) {
-        setAttendanceStatus(prev => ({ ...prev, [found.id]: prev[personId] || "Present" }));
+        // If franchise head, auto-select branch using id if available; fallback to name match
+        if (role === "franchise_head") {
+          if (storedFranchiseId && String(storedFranchiseId).trim() !== "") {
+            const idNum = Number(storedFranchiseId);
+            const foundById = list.find(b => Number(b.id) === idNum);
+            if (foundById) {
+              setBranchId(String(foundById.id));
+            } else if (branchName) {
+              const match = list.find(b => (b.name || "").toLowerCase() === branchName.toLowerCase());
+              if (match) setBranchId(String(match.id));
+            }
+          } else if (branchName) {
+            const match = list.find(b => (b.name || "").toLowerCase() === branchName.toLowerCase());
+            if (match) setBranchId(String(match.id));
+          }
+          // no else: keep empty and let submit try again
+        } else {
+          setBranchId("");
+        }
+        setLoading(false);
+      } catch (e) {
+        setError(e.message);
+        setLoading(false);
       }
-    } else {
-      const found = staff.find(st => st.staffId.toLowerCase() === value.toLowerCase());
-      if (found) {
-        setAttendanceStatus(prev => ({ ...prev, [found.id]: prev[personId] || "Present" }));
+    })();
+  }, [API_BASE, role, branchName]);
+
+  // Persist a resolved branch id into state as soon as we can compute it
+  useEffect(() => {
+    if (role === "franchise_head" && !branchId) {
+      const id = resolveBranchId();
+      if (id) setBranchId(id);
+    }
+  }, [role, branchId, branches, staff, storedFranchiseId, branchName]);
+
+  // Refetch function in component scope so we can call it on demand
+  const refetch = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // For franchise heads resolve the branch upfront so we always filter correctly
+      const effectiveId = role === "franchise_head" ? resolveBranchId() : branchId;
+      const token = getToken();
+      if (role === "franchise_head" && !effectiveId) {
+        // Avoid hitting protected endpoints without a filter
+        setStaff([]);
+        setRecords([]);
+        setLoading(false);
+        return;
       }
-    }
-  };
-
-  const viewRecords = useMemo(() => {
-    const typeMatch = activeType === "student" ? "Student" : "Staff";
-    return attendanceRecords.filter(r =>
-      r.type === typeMatch &&
-      (!branchFilter || r.branch === branchFilter) &&
-      (!date || r.date === date)
-    );
-  }, [attendanceRecords, activeType, branchFilter, date]);
-
-  const summary = useMemo(() => {
-    const initial = { Present: 0, Absent: 0, Late: 0, Excused: 0 };
-    return viewRecords.reduce((acc, r) => {
-      acc[r.status] = (acc[r.status] || 0) + 1;
-      return acc;
-    }, initial);
-  }, [viewRecords]);
-
-  const last7Days = useMemo(() => {
-    const days = [];
-    const today = new Date(date || new Date().toISOString().split("T")[0]);
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      days.push(d.toISOString().split("T")[0]);
-    }
-    return days;
-  }, [date]);
-
-  const weeklySeries = useMemo(() => {
-    const typeMatch = activeType === "student" ? "Student" : "Staff";
-    return last7Days.map(d => {
-      const dayRecs = attendanceRecords.filter(r =>
-        r.type === typeMatch &&
-        (!branchFilter || r.branch === branchFilter) &&
-        r.date === d
+      const staffRes = await fetchWithTimeout(
+        effectiveId ? `${API_BASE}/api/staff/?franchise=${effectiveId}` : `${API_BASE}/api/staff/`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      const total = dayRecs.length || 0;
-      const present = dayRecs.filter(r => r.status === "Present").length;
-      const pct = total ? Math.round((present / total) * 100) : 0;
-      return { date: d, pct, present, total };
-    });
-  }, [attendanceRecords, activeType, branchFilter, last7Days]);
+      // Attendance: if we have an effectiveId, always include franchise for reliable server filtering
+      const attUrl = effectiveId
+        ? `${API_BASE}/api/attendance/?franchise=${effectiveId}&date=${date}`
+        : `${API_BASE}/api/attendance/?date=${date}`;
+      const attRes = await fetchWithTimeout(attUrl, { headers: { Authorization: `Bearer ${token}` } });
+
+      const staffData = staffRes.ok ? await staffRes.json() : [];
+      const attData = attRes.ok ? await attRes.json() : [];
+      const list = Array.isArray(staffData) ? staffData : [];
+      // Notification if new staff appear
+      if (lastCount && list.length > lastCount) {
+        setInfo(`${list.length - lastCount} new staff detected`);
+        setTimeout(() => setInfo(""), 4000);
+      }
+      setLastCount(list.length);
+      setStaff(list);
+      // If franchise head and branchId empty, try to derive from staff
+      if (role === "franchise_head" && !branchId) {
+        const derived = deriveFranchiseId(list);
+        if (derived) setBranchId(String(derived));
+      }
+      setRecords(Array.isArray(attData) ? attData.filter(r => r.person_type === "staff") : []);
+      setLoading(false);
+    } catch (e) {
+      setError("Failed to load data");
+      setLoading(false);
+    }
+  };
+
+  // Refetch on mount and whenever branch/date/base changes
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [API_BASE, branchId, date]);
+
+  const submit = async () => {
+    const effectiveId = resolveBranchId();
+    // For franchise_head allow submission even if client doesn't know id; backend will enforce correct franchise
+    if (!effectiveId && role !== "franchise_head") {
+      return alert("Select a branch first");
+    }
+    const payload = staff
+      .filter(s => s && s.id !== undefined && s.id !== null)
+      .map(s => ({
+        ...(effectiveId ? { franchise: Number(effectiveId) } : {}),
+        person_type: "staff",
+        person_id: Number(s.id),
+        date,
+        status: status[s.id] || "Absent",
+        in_time: inTime[s.id] || null,
+        out_time: outTime[s.id] || null,
+      }));
+
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/api/attendance/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let msg = "Submit failed";
+        try {
+          const text = await res.text();
+          msg = `${msg} (${res.status}) — ${text?.slice(0, 300)}`;
+        } catch {}
+        console.error("Attendance submit failed", { payload, status: res.status });
+        throw new Error(msg);
+      }
+      // Optimistic UI update: immediately reflect saved records for today's date
+      try {
+        const optimistic = payload.map(p => ({
+          date: p.date,
+          name: (staff.find(s => Number(s.id) === Number(p.person_id)) || {}).name || "",
+          staffId: p.person_id,
+          person_id: p.person_id,
+          in_time: p.in_time,
+          out_time: p.out_time,
+          status: p.status,
+          person_type: "staff",
+        }));
+        setRecords(prev => {
+          const other = Array.isArray(prev) ? prev.filter(r => !(r.person_type === "staff" && r.date === date)) : [];
+          return [...other, ...optimistic];
+        });
+      } catch {}
+
+      const refreshedUrl = effectiveId
+        ? `${API_BASE}/api/attendance/?franchise=${effectiveId}&date=${date}`
+        : `${API_BASE}/api/attendance/?date=${date}`;
+      const refreshed = await fetchWithTimeout(refreshedUrl);
+      if (refreshed.ok) {
+        const data = await refreshed.json();
+        const filtered = (Array.isArray(data) ? data : []).filter(r => r.person_type === "staff");
+        if (filtered.length > 0) {
+          setRecords(filtered);
+        }
+        setInfo("Saved");
+        setTimeout(() => setInfo(""), 2000);
+      } else {
+        const text = await refreshed.text().catch(() => "");
+        setError(`Refresh failed (${refreshed.status}): ${text?.slice(0,120) || 'Unexpected response'}`);
+      }
+    } catch (e) {
+      setError(e.message || "Failed to save attendance");
+    }
+  };
+
+  const fetchMonthly = async () => {
+    const effectiveId = resolveBranchId();
+    try {
+      const res = (role === "franchise_head")
+        ? await fetchWithTimeout(`${API_BASE}/api/attendance/monthly?month=${month}`)
+        : await fetchWithTimeout(`${API_BASE}/api/attendance/monthly?franchise=${effectiveId}&month=${month}`);
+      if (!res.ok) throw new Error("Failed to fetch monthly records");
+      const data = await res.json();
+      setMonthlyRecords(Array.isArray(data) ? data.filter(r => r.person_type === "staff") : []);
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  if (loading) return <div className="p-4">Loading...</div>;
+  if (error) return <div className="p-4 text-red-600">{error}</div>;
 
   return (
     <div className="p-4 sm:p-6">
-      {/* Toggle Student/Staff */}
-      <div className="flex gap-4 mb-4">
-        {["student", "staff"].map(type => (
-          <button
-            key={type}
-            onClick={() => {
-              setActiveType(type);
-              setSearch("");
-              setCourseFilter("");
-              setDeptFilter("");
-            }}
-            className={`px-4 py-2 rounded font-medium ${
-              activeType === type
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            }`}
-          >
-            {type === "student" ? "Student Attendance" : "Staff Attendance"}
-          </button>
-        ))}
+
+      {info && (
+        <div className="mb-3 p-2 rounded bg-green-100 text-green-800 border border-green-200">{info}</div>
+      )}
+      {/* Staff Attendance */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <input type="date" className="border px-3 py-2 rounded" value={date} onChange={e=>setDate(e.target.value)} />
+        <button
+          className="border px-3 py-2 rounded bg-white hover:bg-gray-50"
+          onClick={refetch}
+        >
+          Reload
+        </button>
       </div>
 
-      {/* Branch Tabs */}
-      <div className="flex gap-4 mb-4">
-        {branches.map(branch => (
-          <button
-            key={branch}
-            onClick={() => setBranchFilter(branch)}
-            className={`px-4 py-2 rounded font-medium ${
-              branchFilter === branch
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            }`}
-          >
-            {branch}
-          </button>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        {activeType === "student" ? (
-          <select
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-            className="border px-3 py-2 rounded w-full sm:w-1/3"
-          >
-            <option value="">All Courses</option>
-            {coursesForBranch.map((course, i) => (
-              <option key={i} value={course}>{course}</option>
-            ))}
-          </select>
-        ) : (
-          <select
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="border px-3 py-2 rounded w-full sm:w-1/3"
-          >
-            <option value="">All Departments</option>
-            {deptsForBranch.map((dept, i) => (
-              <option key={i} value={dept}>{dept}</option>
-            ))}
-          </select>
-        )}
-
-        <input
-          type="date"
-          className="border px-3 py-2 rounded w-full sm:w-1/3"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder={`Search ${activeType === "student" ? "student" : "staff"}...`}
-          className="border px-3 py-2 rounded w-full sm:w-1/3"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      {/* Visualization Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="border rounded p-3">
-          <div className="text-sm text-gray-500">Present</div>
-          <div className="text-2xl font-semibold">{summary.Present || 0}</div>
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-sm text-gray-500">Absent</div>
-          <div className="text-2xl font-semibold">{summary.Absent || 0}</div>
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-sm text-gray-500">Late</div>
-          <div className="text-2xl font-semibold">{summary.Late || 0}</div>
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-sm text-gray-500">Excused</div>
-          <div className="text-2xl font-semibold">{summary.Excused || 0}</div>
-        </div>
-      </div>
-
-      {/* Weekly Chart */}
-      <div className="border rounded p-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-semibold">Last 7 Days — % Present</h4>
-          <div className="text-xs text-gray-500">
-            {branchFilter ? `Branch: ${branchFilter}` : "All branches"}
-          </div>
-        </div>
-        <div className="flex items-end gap-2" style={{ height: 120 }}>
-          {weeklySeries.map((d) => (
-            <div key={d.date} className="flex flex-col items-center gap-1 w-10">
-              <div
-                className="w-full bg-blue-500 rounded"
-                style={{ height: `${Math.max(4, d.pct)}px` }}
-                title={`${d.date}: ${d.pct}% (${d.present}/${d.total})`}
-              />
-              <div className="text-[10px] text-gray-600">
-                {d.date.slice(5)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Attendance Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse border border-gray-200 text-sm sm:text-base">
+        <table className="min-w-full border-collapse border border-gray-200 text-sm">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border px-4 py-2">Date</th>
-              <th className="border px-4 py-2">Name</th>
-              {activeType === "student" ? (
-                <>
-                  <th className="border px-4 py-2">Roll No</th>
-                  <th className="border px-4 py-2">Course</th>
-                </>
-              ) : (
-                <>
-                  <th className="border px-4 py-2">Staff ID</th>
-                  <th className="border px-4 py-2">Department</th>
-                </>
-              )}
+              <th className="border px-4 py-2">Staff ID</th>
+              <th className="border px-4 py-2">Staff Name</th>
+              <th className="border px-4 py-2">Timing
+                <div className="text-xs font-normal">(In / Out)</div>
+              </th>
               <th className="border px-4 py-2">Status</th>
             </tr>
           </thead>
           <tbody>
-            {viewRecords.length > 0 ? (
-              viewRecords.map((rec, i) => (
-                <tr key={i} className="text-center">
-                  <td className="border px-4 py-2">{rec.date}</td>
-                  <td className="border px-4 py-2">{rec.name}</td>
-                  {activeType === "student" ? (
-                    <>
-                      <td className="border px-4 py-2">{rec.rollNo}</td>
-                      <td className="border px-4 py-2">{rec.course}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="border px-4 py-2">{rec.staffId}</td>
-                      <td className="border px-4 py-2">{rec.department}</td>
-                    </>
-                  )}
-                  <td
-                    className={`border px-4 py-2 font-medium ${
-                      rec.status === "Present"
-                        ? "text-green-600"
-                        : rec.status === "Late"
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {rec.status}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center p-4 text-gray-500">
-                  No attendance records found.
+            {staff.map(st => (
+              <tr key={st.id}>
+                <td className="border px-4 py-2">{st.staffId || st.id}</td>
+                <td className="border px-4 py-2">{st.name}</td>
+                <td className="border px-4 py-2">
+                  <div className="flex gap-2">
+                    <input type="time" className="border px-2 py-1 rounded" value={inTime[st.id]||""} onChange={e=>setInTime(p=>({...p,[st.id]:e.target.value}))} />
+                    <input type="time" className="border px-2 py-1 rounded" value={outTime[st.id]||""} onChange={e=>setOutTime(p=>({...p,[st.id]:e.target.value}))} />
+                  </div>
+                </td>
+                <td className="border px-4 py-2">
+                  <select className="border px-2 py-1 rounded" value={status[st.id]||"Present"} onChange={e=>setStatus(p=>({...p,[st.id]:e.target.value}))}>
+                    <option>Present</option>
+                    <option>Absent</option>
+                    <option>Late</option>
+                    <option>Excused</option>
+                  </select>
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
+      </div>
+
+      <button onClick={submit} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Save Attendance</button>
+
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-2">Attendance Records — Staff</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse border border-gray-200 text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-4 py-2">Date</th>
+                <th className="border px-4 py-2">Staff</th>
+                <th className="border px-4 py-2">Staff ID</th>
+                <th className="border px-4 py-2">In</th>
+                <th className="border px-4 py-2">Out</th>
+                <th className="border px-4 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((r,i)=> (
+                <tr key={i}>
+                  <td className="border px-4 py-2">{r.date}</td>
+                  <td className="border px-4 py-2">{r.name}</td>
+                  <td className="border px-4 py-2">{r.staffId||r.person_id}</td>
+                  <td className="border px-4 py-2">{r.in_time||"-"}</td>
+                  <td className="border px-4 py-2">{r.out_time||"-"}</td>
+                  <td className="border px-4 py-2">{r.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-2">Monthly Attendance — Staff</h3>
+        <div className="flex flex-col sm:flex-row gap-3 mb-3">
+          <input
+            type="month"
+            className="border px-3 py-2 rounded w-full sm:w-auto"
+            value={month}
+            onChange={e => setMonth(e.target.value)}
+          />
+          <button onClick={fetchMonthly} className="bg-gray-800 text-white px-4 py-2 rounded w-full sm:w-auto">View Month</button>
+        </div>
+        {monthlyRecords.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse border border-gray-200 text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border px-4 py-2">Date</th>
+                  <th className="border px-4 py-2">Staff</th>
+                  <th className="border px-4 py-2">Staff ID</th>
+                  <th className="border px-4 py-2">In</th>
+                  <th className="border px-4 py-2">Out</th>
+                  <th className="border px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyRecords.map((r,i)=> (
+                  <tr key={`m-${i}`}>
+                    <td className="border px-4 py-2">{r.date}</td>
+                    <td className="border px-4 py-2">{r.name}</td>
+                    <td className="border px-4 py-2">{r.staffId||r.person_id}</td>
+                    <td className="border px-4 py-2">{r.in_time||"-"}</td>
+                    <td className="border px-4 py-2">{r.out_time||"-"}</td>
+                    <td className="border px-4 py-2">{r.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600">No monthly records to display.</div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { getApi } from "@/utils/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,15 +22,7 @@ const StatusBadge = ({ status }) => (
   </Badge>
 );
 
-// ------------------------
-// Axios request helper to include token dynamically
-const getApi = () => {
-  const token = localStorage.getItem("access_token"); // ✅ JWT token key from login
-  return axios.create({
-    baseURL: "http://127.0.0.1:8000/api/",
-    headers: token ? { Authorization: `Bearer ${token}` } : {}, // ✅ use Bearer
-  });
-};
+// Note: Using shared getApi from src/utils/api.js to ensure consistent baseURL and headers
 
 // ------------------------
 // Add/Edit Student Dialog
@@ -164,19 +156,30 @@ export default function StudentManagement({ set_data }) {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Ensure user is authenticated; if not, show guidance
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setRows([]);
+          setFranchises([]);
+          alert("You are not logged in. Please log in to view students.");
+          return;
+        }
+
         const api = getApi(); // fresh instance with token
         const [studentRes, franchiseRes] = await Promise.all([
           api.get("students/"),
           api.get("add-franchise/franchise/")
         ]);
 
-        const students = studentRes.data.map((s) => ({
+        const studentPayload = studentRes.data?.results ?? studentRes.data ?? [];
+        const students = studentPayload.map((s) => ({
           ...s,
           franchise: s.franchise ? { id: s.franchise.id, name: s.franchise.name } : null,
         }));
 
+        const franchisesPayload = franchiseRes.data?.results ?? franchiseRes.data ?? [];
         setRows(students);
-        setFranchises(franchiseRes.data);
+        setFranchises(franchisesPayload);
       } catch (err) {
         console.error("Failed to fetch:", err);
         alert("Error fetching students/franchises from backend");

@@ -76,9 +76,7 @@ export const FranchiseHeader = ({
                 </Avatar>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium truncate">
-                    {role === "franchise_head"
-                      ? "Franchise Head"
-                      : role.charAt(0).toUpperCase() + role.slice(1)}
+                    Franchise head
                   </p>
                   <p className="text-xs text-muted-foreground">{location}</p>
                 </div>

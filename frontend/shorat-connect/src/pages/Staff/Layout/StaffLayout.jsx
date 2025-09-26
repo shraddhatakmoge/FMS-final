@@ -7,11 +7,10 @@ import { DashboardContent } from "../Dashboard/DashboardContent";
 import {NotificationPage} from "../Notifications/NotificationPage"
 import MyStudents from "../Student/MyStudents";
 import MyBatches from "../Batches/MyBatches";
-import AttendanceSystem from "../AttendanceSystem/AttendanceSystem";
 import ProgressReports from "../Progress and Reports/ProgressReports";
 import { Menu, X } from "lucide-react";
 
-export const StaffLayout = () => {
+export const StaffLayout = ({ user, onLogout }) => {
   const [activePage, setActivePage] = useState("dashboard"); // default dashboard
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,8 +39,6 @@ const [notifications, setNotifications] = useState([
         return <MyStudents />;
       case "My Batches":
         return <MyBatches />;
-      case "Attendance":
-        return <AttendanceSystem />;
       case "Student Progress":
         return <ProgressReports />;
       case "Chat":
@@ -65,10 +62,11 @@ const [notifications, setNotifications] = useState([
     <div className="flex flex-col h-screen bg-gray-100">
       {/* Header */}
       <StaffHeader
-        onNotificationsClick={() => setActivePage("notifications")}
+        user={user}
         unreadCount={notifications.filter((n) => !n.read).length}
-        onGoHome={() => setActivePage("dashboard")} // ✅ Clicking Shorat Innovations = dashboard
-        setActivePage={setActivePage} // ✅ Pass to Header for Profile button
+        onMenuToggle={() => setMobileOpen((prev) => !prev)}
+        onBellClick={() => setActivePage("Notifications")}
+        onLogout={onLogout}
       />
 
       <div className="flex flex-1 relative">
