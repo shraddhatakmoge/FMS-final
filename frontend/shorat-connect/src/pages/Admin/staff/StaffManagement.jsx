@@ -26,10 +26,7 @@ import {
 } from "@/components/ui/dialog";
 
 // ✅ Add/Edit Staff Dialog
-<<<<<<< HEAD
-=======
 // ✅ Add/Edit Staff Dialog with debug
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
 const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -37,12 +34,7 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
     password: "",
     phone: "",
     salary: "",
-<<<<<<< HEAD
-    franchise: "Wagholi Pune", // legacy display
-    franchise_id: "",          // used for backend
-=======
     franchise: franchises?.[0]?.id || "",
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
     status: "Active",
   });
 
@@ -54,16 +46,7 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
         password: "",
         phone: staffData.phone || "",
         salary: staffData.salary || "",
-<<<<<<< HEAD
-        franchise: staffData.franchise || "Wagholi Pune",
-        franchise_id: (() => {
-          // Try to resolve current franchise name to id
-          const match = Array.isArray(franchises) ? franchises.find(f => (f.name||"") === (staffData.franchise||"")) : null;
-          return match ? String(match.id) : "";
-        })(),
-=======
         franchise: staffData.franchise_id || franchises?.[0]?.id || "",
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
         status: staffData.status || "Active",
       });
     } else {
@@ -73,12 +56,7 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
         password: "",
         phone: "",
         salary: "",
-<<<<<<< HEAD
-        franchise: "Wagholi Pune",
-        franchise_id: "",
-=======
         franchise: franchises?.[0]?.id || "",
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
         status: "Active",
       });
     }
@@ -112,10 +90,6 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
         ...formData,
         franchise: Number(formData.franchise),  // ✅ send ID, not name
         salary: Number(formData.salary),
-<<<<<<< HEAD
-        // ensure franchise_id is numeric when provided
-        franchise_id: formData.franchise_id ? Number(formData.franchise_id) : undefined,
-=======
         role: "Staff",
       };
 
@@ -133,7 +107,6 @@ const StaffDialog = ({ open, onClose, onSubmit, staffData, franchises }) => {
         salary: "",
         franchise: franchises?.[0]?.id || "",
         status: "Active",
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
       });
 
       onClose();
@@ -228,46 +201,6 @@ const StaffManagement = () => {
   const [editingStaff, setEditingStaff] = useState(null);
   const [franchises, setFranchises] = useState([]);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    fetchStaff();
-    fetchFranchises();
-  }, []);
-
-  const fetchStaff = async () => {
-    try {
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/staff/`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      setStaffList(res.data);
-    } catch (error) {
-      console.error("Error fetching staff:", error);
-    }
-  };
-
-  // Load franchises for the Add/Edit Staff dialog dropdown
-  const fetchFranchises = async () => {
-    try {
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/franchises/`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      setFranchises(Array.isArray(res.data) ? res.data : []);
-    } catch (error) {
-      console.error("Error fetching franchises:", error);
-      setFranchises([]);
-    }
-  };
-
-  const handleAddStaff = async (staffData) => {
-    try {
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const res = await axios.post(`${API_BASE}/api/staff/`, staffData, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      setStaffList([...staffList, res.data]);
-=======
   const token = localStorage.getItem("access_token");
 
   // ✅ Axios config with JWT token
@@ -299,7 +232,6 @@ const StaffManagement = () => {
       const res = await axios.post("http://localhost:8000/api/staff/", staffData, config);
       setStaffList((prev) => [...prev, res.data]);
       return res.data;
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
     } catch (error) {
       throw error;
     }
@@ -308,17 +240,8 @@ const StaffManagement = () => {
   // Update staff
   const handleUpdateStaff = async (staffData) => {
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const res = await axios.put(`${API_BASE}/api/staff/${editingStaff.id}/`, staffData, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const updatedList = staffList.map((s) => (s.id === editingStaff.id ? res.data : s));
-      setStaffList(updatedList);
-=======
       const res = await axios.put(`http://localhost:8000/api/staff/${editingStaff.id}/`, staffData, config);
       setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? res.data : s)));
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
       setEditingStaff(null);
     } catch (error) {
       throw error;
@@ -329,22 +252,8 @@ const StaffManagement = () => {
   const handleDeleteStaff = async (staffId) => {
     if (!window.confirm("Are you sure you want to delete this staff?")) return;
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const res = await axios.delete(`${API_BASE}/api/staff/${staffId}/`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.status === 204) {
-        // Safest: refetch from server to ensure consistency
-        await fetchStaff();
-      } else {
-        // Fallback: optimistic update
-        setStaffList((prev) => prev.filter((s) => s.id !== staffId));
-      }
-=======
       await axios.delete(`http://localhost:8000/api/staff/${staffId}/`, config);
       setStaffList((prev) => prev.filter((s) => s.id !== staffId));
->>>>>>> fdd82c8e5603c5b702e2b56ca41c5e3120dd7c7f
     } catch (error) {
       console.error(error);
       const msg = error?.response?.data ? JSON.stringify(error.response.data) : error.message;
